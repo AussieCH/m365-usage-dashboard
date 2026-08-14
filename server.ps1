@@ -83,7 +83,10 @@ Start-PodeServer -RootPath $root {
 
     Add-PodeRoute -Method Post -Path '/api/collect' -ScriptBlock {
         try {
-            $result = Invoke-UsageCollection
+            # Erfassungen serialisieren — parallele Läufe würden sich gegenseitig überschreiben
+            $result = Lock-PodeObject -Object $WebEvent.Lockable -Return -ScriptBlock {
+                Invoke-UsageCollection
+            }
             Write-PodeJsonResponse -Value $result
         }
         catch {
@@ -95,7 +98,9 @@ Start-PodeServer -RootPath $root {
     $cron = (Get-AppSettings).scheduleCron
     Add-PodeSchedule -Name 'WeeklyCollection' -Cron $cron -ScriptBlock {
         try {
-            $r = Invoke-UsageCollection
+            $r = Lock-PodeObject -Object $Event.Lockable -Return -ScriptBlock {
+                Invoke-UsageCollection
+            }
             Write-PodeHost "Geplante Erfassung ok: $($r.users) Benutzer, Snapshot $($r.date)"
         }
         catch {
