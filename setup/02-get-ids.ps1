@@ -6,9 +6,14 @@
 #
 # Voraussetzungen:
 #   Install-Module Microsoft.Graph.Applications -Scope CurrentUser
+#
+# Aufruf:  ./02-get-ids.ps1                          (Standardname)
+#          ./02-get-ids.ps1 -AppName 'Mein Name'     (eigener App-Name)
+
+param([string]$AppName = 'Speicher-Dashboard')
 
 $ErrorActionPreference = 'Stop'
-$appName = 'Speicher-Dashboard'   # ggf. an den gewählten App-Namen anpassen
+$appName = $AppName
 
 Import-Module Microsoft.Graph.Applications
 Connect-MgGraph -Scopes 'Application.Read.All' -NoWelcome

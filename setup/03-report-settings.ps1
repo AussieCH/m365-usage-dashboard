@@ -5,6 +5,11 @@
 #
 # Voraussetzungen:
 #   Install-Module Microsoft.Graph.Reports -Scope CurrentUser
+#
+# Aufruf:  ./03-report-settings.ps1           (fragt vor dem Umstellen nach)
+#          ./03-report-settings.ps1 -Force    (stellt ohne Rückfrage um)
+
+param([switch]$Force)
 
 $ErrorActionPreference = 'Stop'
 
@@ -14,7 +19,7 @@ Connect-MgGraph -Scopes 'ReportSettings.ReadWrite.All' -NoWelcome
 $settings = Get-MgAdminReportSetting
 if ($settings.DisplayConcealedNames) {
     Write-Host 'Berichte sind aktuell PSEUDONYMISIERT (Hashes statt Namen).' -ForegroundColor Yellow
-    $answer = Read-Host 'Pseudonymisierung jetzt abschalten? (j/n)'
+    $answer = if ($Force) { 'j' } else { Read-Host 'Pseudonymisierung jetzt abschalten? (j/n)' }
     if ($answer -eq 'j') {
         Update-MgAdminReportSetting -BodyParameter @{ displayConcealedNames = $false }
         Write-Host 'Erledigt — Berichte zeigen künftig Klarnamen.' -ForegroundColor Green

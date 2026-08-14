@@ -6,9 +6,14 @@
 # Voraussetzungen:
 #   Install-Module Microsoft.Graph.Applications -Scope CurrentUser
 #   Ausführung als Global Administrator (oder Privileged Role Admin + App Admin)
+#
+# Aufruf:  ./01-register-app.ps1                          (Standardname)
+#          ./01-register-app.ps1 -AppName 'Mein Name'     (eigener App-Name)
+
+param([string]$AppName = 'Speicher-Dashboard')
 
 $ErrorActionPreference = 'Stop'
-$appName = 'Speicher-Dashboard'
+$appName = $AppName
 
 Import-Module Microsoft.Graph.Applications
 Connect-MgGraph -Scopes 'Application.ReadWrite.All', 'AppRoleAssignment.ReadWrite.All' -NoWelcome
@@ -66,3 +71,7 @@ Write-Host '=== Diese Werte im Dashboard unter Einstellungen eintragen ===' -For
     'Secret-Ablauf' = $secret.EndDateTime.ToString('yyyy-MM-dd')
 } | Format-List
 Write-Host 'Das Secret ist nur jetzt sichtbar — sofort kopieren!' -ForegroundColor Yellow
+Write-Host ''
+Write-Host 'Hinweis: Neu erteilte Berechtigungen brauchen einige Minuten, bis sie in'
+Write-Host 'den Tokens ankommen. Meldet das Dashboard anfangs 403-Fehler oder fehlende'
+Write-Host 'Website-Namen, einfach 5-15 Minuten warten und erneut erfassen.'
