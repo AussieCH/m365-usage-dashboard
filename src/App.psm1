@@ -44,6 +44,22 @@ function Invoke-UsageCollection {
     if ($snap.users.Count -eq 0) {
         throw 'Report war leer — keine Benutzerdaten erhalten.'
     }
+
+    # Schlägt der Namens-Abruf fehl (z. B. 403 während Consent-Propagation), bereits
+    # bekannte Namen/URLs aus dem letzten Snapshot übernehmen statt sie zu löschen.
+    if ($snap.siteWarning) {
+        $prev = @{}
+        foreach ($p in (Get-LatestSites)) {
+            if ($p.name -or $p.url) { $prev[$p.site_id] = $p }
+        }
+        foreach ($s in $snap.sites) {
+            $old = $prev[$s.siteId]
+            if ($old) {
+                if (-not $s.name -and $old.name) { $s.name = [string]$old.name }
+                if (-not $s.url -and $old.url) { $s.url = [string]$old.url }
+            }
+        }
+    }
     Save-Snapshot -SnapshotDate $snap.reportDate -Users $snap.users
     Save-SiteSnapshot -SnapshotDate $snap.reportDate -Sites $snap.sites
     Set-MetaValue -Key 'concealed' -Value ([string]$snap.concealed).ToLower()
