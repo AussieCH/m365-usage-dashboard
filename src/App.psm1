@@ -7,6 +7,7 @@ function Invoke-UsageCollection {
       damit das Zuwachs-Diagramm sofort etwas zeigt.
     #>
     $settings = Get-AppSettings
+    Initialize-Database   # idempotent — stellt das Schema sicher, auch wenn die DB im Betrieb gelöscht wurde
 
     if ($settings.demoMode) {
         $today = Get-Date
@@ -53,6 +54,7 @@ function Invoke-UsageCollection {
 function Get-DashboardData {
     <# Liefert alle Daten für das Dashboard in einem Rutsch. #>
     $settings = Get-AppSettings
+    Initialize-Database   # idempotent, siehe Invoke-UsageCollection
     $secretSet = [bool]$settings.clientSecretEnc
     [pscustomobject]@{
         status = [pscustomobject]@{
