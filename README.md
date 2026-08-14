@@ -13,6 +13,10 @@ SQLite-Datenbank historisiert und als Dashboard darstellt:
   (Postfach vorhanden, Konto deaktiviert, keine Lizenz) und separat ausgewiesen
 - **Einstellungen im UI:** Tenant-ID, Client-ID, Client-Secret (verschlüsselt
   gespeichert), Demo-Modus
+- **SharePoint-Reiter:** alle Websites mit Speicherbelegung, Typ (Team/Kommunikation),
+  Besitzer, Dateizahl, aktiven Dateien, Seitenaufrufen und letzter Aktivität;
+  Inaktiv-Markierung (> 90 Tage) als Archivierungs-Kandidaten, eigener Zeitverlauf,
+  Suche/Sortierung/Filter wie bei den Benutzern
 - **Automatik:** eingebauter Wochen-Schedule (Standard: Montag 06:00) erfasst die
   Daten selbstständig, solange der Server läuft
 
@@ -74,7 +78,8 @@ werden (DPAPI ist benutzergebunden).
 ## Datenhaltung
 
 - `data/usage.db` — SQLite; Tabelle `snapshots` mit einem Datensatz pro Benutzer
-  und Snapshot-Datum (Primärschlüssel `snapshot_date, upn`), Tabelle `meta`.
+  und Snapshot-Datum (Primärschlüssel `snapshot_date, upn`), Tabelle `site_snapshots`
+  analog pro SharePoint-Site (`snapshot_date, site_id`), Tabelle `meta`.
 - Erfassung überschreibt denselben Tag idempotent (`INSERT OR REPLACE`) —
   mehrfaches „Jetzt erfassen" erzeugt keine Duplikate.
 - `settings.json` — Konfiguration; das Client-Secret ist unter Windows per DPAPI

@@ -30,6 +30,12 @@
       «Verborgene Benutzer-, Gruppen- und Websitenamen in allen Berichten anzeigen» aktivieren, danach neu erfassen.
     </div>
 
+    <nav class="tabs" role="tablist">
+      <button class="tab active" id="tabUsers" role="tab" aria-selected="true">Benutzer</button>
+      <button class="tab" id="tabSites" role="tab" aria-selected="false">SharePoint</button>
+    </nav>
+
+    <div id="viewUsers">
     <section class="tiles" id="tiles"></section>
 
     <section class="card">
@@ -68,6 +74,49 @@
         </table>
       </div>
     </section>
+    </div><!-- /viewUsers -->
+
+    <div id="viewSites" class="hidden">
+    <section class="tiles" id="siteTiles"></section>
+
+    <section class="card">
+      <h2>SharePoint-Belegung über Zeit</h2>
+      <div class="chart-box"><canvas id="siteChart" role="img"
+        aria-label="Liniendiagramm: SharePoint-Gesamtbelegung über die Zeit"></canvas></div>
+    </section>
+
+    <section class="card">
+      <h2>Websites</h2>
+      <div class="table-tools">
+        <input type="search" id="siteSearchBox" placeholder="Suchen (Name, URL oder Besitzer) …">
+        <select id="siteFilterSelect">
+          <option value="all">Alle Websites</option>
+          <option value="inactive">Inaktiv &gt; 90 Tage</option>
+          <option value="top10">Top 10 Speicher</option>
+          <option value="team">Teamwebsites</option>
+          <option value="comm">Kommunikationswebsites</option>
+        </select>
+      </div>
+      <div class="table-scroll">
+        <table id="siteTable">
+          <thead>
+            <tr>
+              <th data-key="name">Website<span class="arrow"></span></th>
+              <th data-key="templateLabel">Typ<span class="arrow"></span></th>
+              <th data-key="owner">Besitzer<span class="arrow"></span></th>
+              <th class="num" data-key="storageBytes">Speicher<span class="arrow"></span></th>
+              <th class="num" data-key="files">Dateien<span class="arrow"></span></th>
+              <th class="num" data-key="activeFiles">Aktive Dateien<span class="arrow"></span></th>
+              <th class="num" data-key="pageViews">Seitenaufrufe<span class="arrow"></span></th>
+              <th class="num" data-key="daysInactive">Letzte Aktivität<span class="arrow"></span></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+          <tfoot><tr><td colspan="8" id="siteTableFoot"></td></tr></tfoot>
+        </table>
+      </div>
+    </section>
+    </div><!-- /viewSites -->
   </div>
 
   <dialog id="settingsDialog">

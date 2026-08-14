@@ -19,8 +19,14 @@ function Invoke-UsageCollection {
                 $u.onedriveBytes = [long]($u.onedriveBytes * $factor)
                 $u
             }
+            $sites = $snap.sites | ForEach-Object {
+                $s = $_.PSObject.Copy()
+                $s.storageBytes = [long]($s.storageBytes * $factor)
+                $s
+            }
             $date = $today.AddDays(-7 * $w).ToString('yyyy-MM-dd')
             Save-Snapshot -SnapshotDate $date -Users $users
+            Save-SiteSnapshot -SnapshotDate $date -Sites $sites
         }
         Set-MetaValue -Key 'concealed' -Value 'false'
         Set-MetaValue -Key 'licenseWarning' -Value ''
@@ -37,10 +43,11 @@ function Invoke-UsageCollection {
         throw 'Report war leer — keine Benutzerdaten erhalten.'
     }
     Save-Snapshot -SnapshotDate $snap.reportDate -Users $snap.users
+    Save-SiteSnapshot -SnapshotDate $snap.reportDate -Sites $snap.sites
     Set-MetaValue -Key 'concealed' -Value ([string]$snap.concealed).ToLower()
     Set-MetaValue -Key 'licenseWarning' -Value ([string]$snap.licenseWarning)
 
-    [pscustomobject]@{ ok = $true; users = $snap.users.Count; date = $snap.reportDate; concealed = $snap.concealed }
+    [pscustomobject]@{ ok = $true; users = $snap.users.Count; sites = $snap.sites.Count; date = $snap.reportDate; concealed = $snap.concealed }
 }
 
 function Get-DashboardData {
@@ -56,8 +63,10 @@ function Get-DashboardData {
             concealed      = ((Get-MetaValue -Key 'concealed') -eq 'true')
             licenseWarning = [string](Get-MetaValue -Key 'licenseWarning')
         }
-        history = @(Get-History)
-        users   = @(Get-LatestUsers)
+        history     = @(Get-History)
+        users       = @(Get-LatestUsers)
+        siteHistory = @(Get-SiteHistory)
+        sites       = @(Get-LatestSites)
     }
 }
 

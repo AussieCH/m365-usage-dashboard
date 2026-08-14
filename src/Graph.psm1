@@ -81,6 +81,7 @@ function Get-UsageSnapshot {
 
     $mbx = Get-GraphReportCsv -Token $token -ReportName 'getMailboxUsageDetail'
     $od  = Get-GraphReportCsv -Token $token -ReportName 'getOneDriveUsageAccountDetail'
+    $sp  = Get-GraphReportCsv -Token $token -ReportName 'getSharePointSiteUsageDetail'
 
     $users = @{}
     foreach ($row in $mbx) {
@@ -119,6 +120,24 @@ function Get-UsageSnapshot {
         $u.onedriveQuotaBytes = [long]($row.'Storage Allocated (Byte)' | ForEach-Object { if ($_) { $_ } else { 0 } })
         $u.onedriveFiles      = [long]($row.'File Count'               | ForEach-Object { if ($_) { $_ } else { 0 } })
         if (-not $u.displayName) { $u.displayName = $row.'Owner Display Name' }
+    }
+
+    # SharePoint-Sites aufbereiten
+    $sites = foreach ($row in $sp) {
+        if ($row.'Is Deleted' -eq 'True') { continue }
+        if (-not $row.'Site Id') { continue }
+        [pscustomobject]@{
+            siteId       = $row.'Site Id'
+            url          = $row.'Site URL'
+            owner        = $row.'Owner Display Name'
+            template     = $row.'Root Web Template'
+            lastActivity = $row.'Last Activity Date'
+            files        = [long]($row.'File Count'          | ForEach-Object { if ($_) { $_ } else { 0 } })
+            activeFiles  = [long]($row.'Active File Count'   | ForEach-Object { if ($_) { $_ } else { 0 } })
+            pageViews    = [long]($row.'Page View Count'     | ForEach-Object { if ($_) { $_ } else { 0 } })
+            storageBytes = [long]($row.'Storage Used (Byte)' | ForEach-Object { if ($_) { $_ } else { 0 } })
+            quotaBytes   = [long]($row.'Storage Allocated (Byte)' | ForEach-Object { if ($_) { $_ } else { 0 } })
+        }
     }
 
     # Lizenzen und freigegebene Postfächer ergänzen (optional — braucht
@@ -164,6 +183,7 @@ function Get-UsageSnapshot {
         concealed      = $concealed
         licenseWarning = $licenseWarning
         users          = @($users.Values | ForEach-Object { [pscustomobject]$_ })
+        sites          = @($sites)
     }
 }
 
@@ -207,11 +227,38 @@ function Get-DemoSnapshot {
             isShared           = 1
         }
     }
+    $siteDefs = @(
+        @{ n = 'Intranet';   t = 'SITEPAGEPUBLISHING#0'; gb = 18;  act = 2 },
+        @{ n = 'Projekte';   t = 'GROUP#0';              gb = 260; act = 1 },
+        @{ n = 'Vertrieb';   t = 'GROUP#0';              gb = 95;  act = 3 },
+        @{ n = 'Marketing';  t = 'GROUP#0';              gb = 140; act = 5 },
+        @{ n = 'IT';         t = 'GROUP#0';              gb = 75;  act = 2 },
+        @{ n = 'GL';         t = 'GROUP#0';              gb = 22;  act = 8 },
+        @{ n = 'Qualitaet';  t = 'GROUP#0';              gb = 48;  act = 12 },
+        @{ n = 'Events';     t = 'GROUP#0';              gb = 34;  act = 60 },
+        @{ n = 'Archiv';     t = 'STS#3';                gb = 410; act = 210 },
+        @{ n = 'Altprojekte'; t = 'STS#3';               gb = 180; act = 130 }
+    )
+    $sites = foreach ($sd in $siteDefs) {
+        [pscustomobject]@{
+            siteId       = 'demo-site-' + $sd.n.ToLower()
+            url          = 'https://demo.sharepoint.com/sites/' + $sd.n
+            owner        = $names[$rand.Next(0, $names.Count)]
+            template     = $sd.t
+            lastActivity = (Get-Date).AddDays(-$sd.act).ToString('yyyy-MM-dd')
+            files        = [long]($rand.Next(800, 60000))
+            activeFiles  = [long]($rand.Next(0, 900))
+            pageViews    = [long]($rand.Next(5, 4000))
+            storageBytes = [long]($sd.gb * 1GB + $rand.NextDouble() * 5GB)
+            quotaBytes   = 25TB
+        }
+    }
     [pscustomobject]@{
         reportDate     = (Get-Date).ToString('yyyy-MM-dd')
         concealed      = $false
         licenseWarning = ''
         users          = @($users) + @($shared)
+        sites          = @($sites)
     }
 }
 

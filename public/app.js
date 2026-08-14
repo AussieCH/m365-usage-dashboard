@@ -6,10 +6,31 @@ const $ = (sel) => document.querySelector(sel);
 let state = {
   users: [],          // aufbereitete Benutzerliste
   history: [],
+  sites: [],
+  siteHistory: [],
   status: null,
   sortKey: 'totalBytes',
   sortDir: -1,        // -1 = absteigend
+  siteSortKey: 'storageBytes',
+  siteSortDir: -1,
   chart: null,
+  siteChart: null,
+  siteViewDirty: true, // Sites-Tab bei nächster Aktivierung neu rendern
+};
+
+const TEMPLATE_LABELS = {
+  'GROUP#0': 'Teamwebsite',
+  'SITEPAGEPUBLISHING#0': 'Kommunikation',
+  'STS#0': 'Teamwebsite (klassisch)',
+  'STS#3': 'Teamwebsite (klassisch)',
+  'TEAMCHANNEL#0': 'Teams-Kanal',
+  'TEAMCHANNEL#1': 'Teams-Kanal',
+  'APPCATALOG#0': 'App-Katalog',
+  'SRCHCEN#0': 'Suchcenter',
+  'SPSMSITEHOST#0': 'System',
+  'POINTPUBLISHINGHUB#0': 'System',
+  'POINTPUBLISHINGPERSONAL#0': 'System',
+  'EHS#1': 'System',
 };
 
 // ---------- Formatierung ----------
@@ -50,6 +71,30 @@ async function loadData() {
       isShared: Number(u.is_shared) === 1,
     };
   });
+  state.siteHistory = data.siteHistory || [];
+  state.sites = (data.sites || []).map((s) => {
+    const url = s.url || '';
+    const name = url ? decodeURIComponent(url.replace(/\/$/, '').split('/').pop() || url) : s.site_id;
+    let daysInactive = null;
+    if (s.last_activity) {
+      const d = new Date(s.last_activity);
+      if (!isNaN(d)) daysInactive = Math.max(0, Math.floor((Date.now() - d.getTime()) / 86400000));
+    }
+    return {
+      siteId: s.site_id, url, name,
+      owner: s.owner || '',
+      template: s.template || '',
+      templateLabel: TEMPLATE_LABELS[s.template] || s.template || '–',
+      lastActivity: s.last_activity || '',
+      daysInactive,
+      files: Number(s.files) || 0,
+      activeFiles: Number(s.active_files) || 0,
+      pageViews: Number(s.page_views) || 0,
+      storageBytes: Number(s.storage_bytes) || 0,
+      quotaBytes: Number(s.quota_bytes) || 0,
+    };
+  });
+  state.siteViewDirty = true;
   render();
 }
 
@@ -69,6 +114,15 @@ function render() {
   renderTiles();
   renderChart();
   renderTable();
+  // Sites-Tab nur rendern, wenn er sichtbar ist (Chart braucht sichtbare Canvas)
+  if (!$('#viewSites').classList.contains('hidden')) renderSiteView();
+}
+
+function renderSiteView() {
+  renderSiteTiles();
+  renderSiteChart();
+  renderSiteTable();
+  state.siteViewDirty = false;
 }
 
 function renderTiles() {
@@ -231,6 +285,148 @@ function renderTable() {
   });
 }
 
+// ---------- SharePoint-Ansicht ----------
+function renderSiteTiles() {
+  const total = state.sites.reduce((s, x) => s + x.storageBytes, 0);
+  const files = state.sites.reduce((s, x) => s + x.files, 0);
+  const inactive = state.sites.filter((x) => x.daysInactive != null && x.daysInactive > 90).length;
+
+  let growth = '';
+  if (state.siteHistory.length >= 2) {
+    const first = state.siteHistory[0], last = state.siteHistory[state.siteHistory.length - 1];
+    const delta = Number(last.storage_total) - Number(first.storage_total);
+    growth = (delta >= 0 ? '+' : '−') + fmtBytes(Math.abs(delta)) + ' seit ' + fmtDate(first.snapshot_date);
+  }
+
+  $('#siteTiles').innerHTML = `
+    <div class="tile">
+      <div class="label">SharePoint-Belegung</div>
+      <div class="value">${fmtBytes(total)}</div>
+      <div class="sub">${growth || '&nbsp;'}</div>
+    </div>
+    <div class="tile">
+      <div class="label">Websites</div>
+      <div class="value">${state.sites.length}</div>
+      <div class="sub">&nbsp;</div>
+    </div>
+    <div class="tile">
+      <div class="label">Dateien</div>
+      <div class="value">${files.toLocaleString('de-CH')}</div>
+      <div class="sub">&nbsp;</div>
+    </div>
+    <div class="tile">
+      <div class="label">Inaktiv &gt; 90 Tage</div>
+      <div class="value">${inactive}</div>
+      <div class="sub">${inactive ? 'Kandidaten für Archivierung' : '&nbsp;'}</div>
+    </div>`;
+}
+
+function renderSiteChart() {
+  const css = getComputedStyle(document.documentElement);
+  const cSeries = css.getPropertyValue('--series-mailbox').trim(); // eine Serie → Slot 1 (blau)
+  const cGrid = css.getPropertyValue('--grid').trim();
+  const cMuted = css.getPropertyValue('--text-muted').trim();
+  const cInk = css.getPropertyValue('--text-primary').trim();
+  const cSurface = css.getPropertyValue('--surface-1').trim();
+
+  const labels = state.siteHistory.map((h) => fmtDate(h.snapshot_date));
+  const data = state.siteHistory.map((h) => Number(h.storage_total));
+
+  if (state.siteChart) state.siteChart.destroy();
+  state.siteChart = new Chart($('#siteChart'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: 'SharePoint', data, borderColor: cSeries, backgroundColor: cSeries,
+          borderWidth: 2, pointRadius: 3, pointHoverRadius: 5, tension: 0.15 },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false }, // eine Serie — der Kartentitel benennt sie
+        tooltip: {
+          backgroundColor: cSurface, titleColor: cInk, bodyColor: cInk,
+          borderColor: cGrid, borderWidth: 1,
+          callbacks: { label: (ctx) => ' ' + fmtBytes(ctx.parsed.y) },
+        },
+      },
+      scales: {
+        x: { grid: { color: cGrid }, ticks: { color: cMuted } },
+        y: {
+          grid: { color: cGrid },
+          ticks: { color: cMuted, callback: (v) => fmtBytes(v) },
+          beginAtZero: true,
+        },
+      },
+    },
+  });
+}
+
+function filteredSites() {
+  const q = $('#siteSearchBox').value.trim().toLowerCase();
+  const mode = $('#siteFilterSelect').value;
+  let list = state.sites.filter((s) =>
+    !q || s.name.toLowerCase().includes(q) || s.url.toLowerCase().includes(q) ||
+    s.owner.toLowerCase().includes(q));
+  if (mode === 'inactive') list = list.filter((s) => s.daysInactive != null && s.daysInactive > 90);
+  if (mode === 'top10') list = [...list].sort((a, b) => b.storageBytes - a.storageBytes).slice(0, 10);
+  if (mode === 'team') list = list.filter((s) => s.template.startsWith('GROUP') || s.template.startsWith('STS') || s.template.startsWith('TEAMCHANNEL'));
+  if (mode === 'comm') list = list.filter((s) => s.template.startsWith('SITEPAGEPUBLISHING'));
+
+  const k = state.siteSortKey, dir = state.siteSortDir;
+  list.sort((a, b) => {
+    const va = a[k], vb = b[k];
+    if (typeof va === 'string') return va.localeCompare(vb, 'de') * dir;
+    return ((va ?? -1) - (vb ?? -1)) * dir;
+  });
+  return list;
+}
+
+function activityCell(s) {
+  if (s.daysInactive == null) return '<span class="upn">–</span>';
+  const warn = s.daysInactive > 90;
+  const label = s.daysInactive === 0 ? 'heute'
+    : s.daysInactive === 1 ? 'gestern'
+    : `vor ${s.daysInactive} Tagen`;
+  return `${warn ? '<span class="chip">Inaktiv</span> ' : ''}<span title="${fmtDate(s.lastActivity)}">${label}</span>`;
+}
+
+function renderSiteTable() {
+  const list = filteredSites();
+  $('#siteTable tbody').innerHTML = list.map((s) => `
+    <tr>
+      <td>${s.name}<br><span class="upn">${s.url || s.siteId}</span></td>
+      <td class="lic">${s.templateLabel}</td>
+      <td class="lic">${s.owner || '–'}</td>
+      <td class="num"><strong>${fmtBytes(s.storageBytes)}</strong></td>
+      <td class="num">${s.files.toLocaleString('de-CH')}</td>
+      <td class="num">${s.activeFiles.toLocaleString('de-CH')}</td>
+      <td class="num">${s.pageViews.toLocaleString('de-CH')}</td>
+      <td class="num">${activityCell(s)}</td>
+    </tr>`).join('');
+
+  $('#siteTableFoot').textContent = `${list.length} von ${state.sites.length} Websites`;
+
+  document.querySelectorAll('#siteTable th').forEach((th) => {
+    const arrow = th.querySelector('.arrow');
+    arrow.textContent = th.dataset.key === state.siteSortKey ? (state.siteSortDir < 0 ? ' ▼' : ' ▲') : '';
+  });
+}
+
+function switchTab(tab) {
+  const users = tab === 'users';
+  $('#viewUsers').classList.toggle('hidden', !users);
+  $('#viewSites').classList.toggle('hidden', users);
+  $('#tabUsers').classList.toggle('active', users);
+  $('#tabSites').classList.toggle('active', !users);
+  $('#tabUsers').setAttribute('aria-selected', users);
+  $('#tabSites').setAttribute('aria-selected', !users);
+  if (!users && state.siteViewDirty) renderSiteView();
+}
+
 // ---------- Einstellungen ----------
 async function openSettings() {
   const s = await (await fetch('/api/settings')).json();
@@ -310,6 +506,18 @@ document.querySelectorAll('#userTable th').forEach((th) => {
     if (state.sortKey === key) state.sortDir *= -1;
     else { state.sortKey = key; state.sortDir = key === 'displayName' ? 1 : -1; }
     renderTable();
+  });
+});
+$('#tabUsers').addEventListener('click', () => switchTab('users'));
+$('#tabSites').addEventListener('click', () => switchTab('sites'));
+$('#siteSearchBox').addEventListener('input', renderSiteTable);
+$('#siteFilterSelect').addEventListener('change', renderSiteTable);
+document.querySelectorAll('#siteTable th').forEach((th) => {
+  th.addEventListener('click', () => {
+    const key = th.dataset.key;
+    if (state.siteSortKey === key) state.siteSortDir *= -1;
+    else { state.siteSortKey = key; state.siteSortDir = ['name', 'templateLabel', 'owner'].includes(key) ? 1 : -1; }
+    renderSiteTable();
   });
 });
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', render);

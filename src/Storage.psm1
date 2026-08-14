@@ -52,6 +52,20 @@ CREATE TABLE IF NOT EXISTS snapshots (
     is_shared            INTEGER NOT NULL DEFAULT 0,
     PRIMARY KEY (snapshot_date, upn)
 );
+CREATE TABLE IF NOT EXISTS site_snapshots (
+    snapshot_date TEXT NOT NULL,
+    site_id       TEXT NOT NULL,
+    url           TEXT,
+    owner         TEXT,
+    template      TEXT,
+    last_activity TEXT,
+    files         INTEGER NOT NULL DEFAULT 0,
+    active_files  INTEGER NOT NULL DEFAULT 0,
+    page_views    INTEGER NOT NULL DEFAULT 0,
+    storage_bytes INTEGER NOT NULL DEFAULT 0,
+    quota_bytes   INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (snapshot_date, site_id)
+);
 CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT);
 '@ | Out-Null
 
@@ -130,6 +144,87 @@ VALUES ($vals);
     Set-MetaValue -Key 'lastCollection' -Value (Get-Date).ToString('o')
 }
 
+function Save-SiteSnapshot {
+    param(
+        [Parameter(Mandatory)][string]$SnapshotDate,
+        [Parameter(Mandatory)][AllowEmptyCollection()][object[]]$Sites
+    )
+    $insert = @'
+INSERT OR REPLACE INTO site_snapshots
+    (snapshot_date, site_id, url, owner, template, last_activity,
+     files, active_files, page_views, storage_bytes, quota_bytes)
+VALUES (@date, @id, @url, @own, @tpl, @act, @f, @af, @pv, @sb, @qb)
+'@
+    if ($script:UseCli) {
+        $sb = [Text.StringBuilder]::new()
+        [void]$sb.AppendLine('BEGIN TRANSACTION;')
+        foreach ($s in $Sites) {
+            $vals = @(
+                ConvertTo-SqlLiteral $SnapshotDate
+                ConvertTo-SqlLiteral $s.siteId
+                ConvertTo-SqlLiteral ([string]$s.url)
+                ConvertTo-SqlLiteral ([string]$s.owner)
+                ConvertTo-SqlLiteral ([string]$s.template)
+                ConvertTo-SqlLiteral ([string]$s.lastActivity)
+                ConvertTo-SqlLiteral ([long]$s.files)
+                ConvertTo-SqlLiteral ([long]$s.activeFiles)
+                ConvertTo-SqlLiteral ([long]$s.pageViews)
+                ConvertTo-SqlLiteral ([long]$s.storageBytes)
+                ConvertTo-SqlLiteral ([long]$s.quotaBytes)
+            ) -join ', '
+            [void]$sb.AppendLine(@"
+INSERT OR REPLACE INTO site_snapshots
+    (snapshot_date, site_id, url, owner, template, last_activity,
+     files, active_files, page_views, storage_bytes, quota_bytes)
+VALUES ($vals);
+"@)
+        }
+        [void]$sb.AppendLine('COMMIT;')
+        $out = $sb.ToString() | sqlite3 $script:DbPath 2>&1
+        if ($LASTEXITCODE -ne 0) { throw "sqlite3-Fehler beim Speichern der Sites: $out" }
+    }
+    else {
+        $conn = New-SQLiteConnection -DataSource $script:DbPath
+        try {
+            Invoke-SqliteQuery -SQLiteConnection $conn -Query 'BEGIN TRANSACTION'
+            foreach ($s in $Sites) {
+                Invoke-SqliteQuery -SQLiteConnection $conn -Query $insert -SqlParameters @{
+                    date = $SnapshotDate; id = $s.siteId; url = [string]$s.url; own = [string]$s.owner
+                    tpl = [string]$s.template; act = [string]$s.lastActivity
+                    f = [long]$s.files; af = [long]$s.activeFiles; pv = [long]$s.pageViews
+                    sb = [long]$s.storageBytes; qb = [long]$s.quotaBytes
+                }
+            }
+            Invoke-SqliteQuery -SQLiteConnection $conn -Query 'COMMIT'
+        }
+        catch {
+            Invoke-SqliteQuery -SQLiteConnection $conn -Query 'ROLLBACK'
+            throw
+        }
+        finally {
+            $conn.Close()
+        }
+    }
+}
+
+function Get-LatestSites {
+    $r = Invoke-Db -Query 'SELECT MAX(snapshot_date) AS d FROM site_snapshots'
+    $d = ($r | Select-Object -First 1).d
+    if (-not $d) { return @() }
+    Invoke-Db -Query 'SELECT * FROM site_snapshots WHERE snapshot_date = @d ORDER BY url' -Params @{ d = $d }
+}
+
+function Get-SiteHistory {
+    Invoke-Db -Query @'
+SELECT snapshot_date,
+       COUNT(*)           AS site_count,
+       SUM(storage_bytes) AS storage_total
+FROM site_snapshots
+GROUP BY snapshot_date
+ORDER BY snapshot_date
+'@
+}
+
 function Get-LatestSnapshotDate {
     $r = Invoke-Db -Query 'SELECT MAX(snapshot_date) AS d FROM snapshots'
     ($r | Select-Object -First 1).d
@@ -170,5 +265,5 @@ function Get-MetaValue {
     ($r | Select-Object -First 1).value
 }
 
-Export-ModuleMember -Function Initialize-Database, Save-Snapshot, Get-LatestSnapshotDate,
-    Get-LatestUsers, Get-History, Get-UserHistory, Set-MetaValue, Get-MetaValue
+Export-ModuleMember -Function Initialize-Database, Save-Snapshot, Save-SiteSnapshot, Get-LatestSnapshotDate,
+    Get-LatestUsers, Get-History, Get-UserHistory, Get-LatestSites, Get-SiteHistory, Set-MetaValue, Get-MetaValue

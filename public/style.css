@@ -86,6 +86,16 @@ button:disabled { opacity: 0.5; cursor: default; }
 .banner.critical { border-left-color: var(--status-critical); }
 .hidden { display: none !important; }
 
+/* Reiter */
+.tabs { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid var(--grid); }
+.tab {
+  background: none; border: none; border-radius: 0;
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
+  padding: 8px 14px; color: var(--text-secondary); font-weight: 600;
+}
+.tab:hover { color: var(--text-primary); border-color: transparent; }
+.tab.active { color: var(--text-primary); border-bottom-color: var(--accent); }
+
 /* Stat-Kacheln */
 .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px; }
 .tile {
