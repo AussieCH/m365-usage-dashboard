@@ -74,7 +74,8 @@ async function loadData() {
   state.siteHistory = data.siteHistory || [];
   state.sites = (data.sites || []).map((s) => {
     const url = s.url || '';
-    const name = url ? decodeURIComponent(url.replace(/\/$/, '').split('/').pop() || url) : s.site_id;
+    const urlName = url ? decodeURIComponent(url.replace(/\/$/, '').split('/').pop() || url) : '';
+    const name = s.name || urlName || s.site_id;
     let daysInactive = null;
     if (s.last_activity) {
       const d = new Date(s.last_activity);
@@ -105,6 +106,8 @@ function render() {
   $('#bannerConcealed').classList.toggle('hidden', !st.concealed);
   $('#bannerLicense').classList.toggle('hidden', !st.licenseWarning);
   $('#bannerLicenseText').textContent = st.licenseWarning || '';
+  $('#bannerSites').classList.toggle('hidden', !st.siteWarning);
+  $('#bannerSitesText').textContent = st.siteWarning || '';
   $('#metaInfo').innerHTML = [
     st.demoMode ? '<strong>Demo-Modus</strong>' : '',
     st.snapshotDate ? 'Snapshot: ' + fmtDate(st.snapshotDate) : '',

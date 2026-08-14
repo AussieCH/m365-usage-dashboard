@@ -141,6 +141,7 @@ function Get-UsageSnapshot {
         [pscustomobject]@{
             siteId       = $row.'Site Id'
             url          = $row.'Site URL'
+            name         = ''
             owner        = $row.'Owner Display Name'
             template     = $row.'Root Web Template'
             lastActivity = $row.'Last Activity Date'
@@ -150,6 +151,30 @@ function Get-UsageSnapshot {
             storageBytes = [long]($row.'Storage Used (Byte)' | ForEach-Object { if ($_) { $_ } else { 0 } })
             quotaBytes   = [long]($row.'Storage Allocated (Byte)' | ForEach-Object { if ($_) { $_ } else { 0 } })
         }
+    }
+
+    # Website-Namen und -URLs ergänzen (optional — braucht Sites.Read.All).
+    # Hintergrund: Der Usage-Report liefert die Site-URL in vielen Tenants nicht mehr.
+    $siteWarning = ''
+    try {
+        $allSites = Get-GraphJsonPaged -Token $token `
+            -Uri 'https://graph.microsoft.com/v1.0/sites/getAllSites?$select=id,displayName,webUrl'
+        # Site-ID im Report = mittlerer GUID-Teil der zusammengesetzten Graph-Site-ID
+        $siteMap = @{}
+        foreach ($s in $allSites) {
+            $parts = ([string]$s.id).Split(',')
+            if ($parts.Count -ge 2) { $siteMap[$parts[1].ToLowerInvariant()] = $s }
+        }
+        foreach ($site in $sites) {
+            $info = $siteMap[$site.siteId.ToLowerInvariant()]
+            if ($info) {
+                if ($info.displayName) { $site.name = [string]$info.displayName }
+                if (-not $site.url -and $info.webUrl) { $site.url = [string]$info.webUrl }
+            }
+        }
+    }
+    catch {
+        $siteWarning = "Website-Namen nicht abrufbar (fehlt der App Sites.Read.All?): $($_.Exception.Message)"
     }
 
     # Lizenzen und freigegebene Postfächer ergänzen (optional — braucht
@@ -195,6 +220,7 @@ function Get-UsageSnapshot {
         reportDate     = $refreshDate
         concealed      = $concealed
         licenseWarning = $licenseWarning
+        siteWarning    = $siteWarning
         users          = @($users.Values | ForEach-Object { [pscustomobject]$_ })
         sites          = @($sites)
     }
@@ -256,6 +282,7 @@ function Get-DemoSnapshot {
         [pscustomobject]@{
             siteId       = 'demo-site-' + $sd.n.ToLower()
             url          = 'https://demo.sharepoint.com/sites/' + $sd.n
+            name         = $sd.n
             owner        = $names[$rand.Next(0, $names.Count)]
             template     = $sd.t
             lastActivity = (Get-Date).AddDays(-$sd.act).ToString('yyyy-MM-dd')
@@ -270,6 +297,7 @@ function Get-DemoSnapshot {
         reportDate     = (Get-Date).ToString('yyyy-MM-dd')
         concealed      = $false
         licenseWarning = ''
+        siteWarning    = ''
         users          = @($users) + @($shared)
         sites          = @($sites)
     }

@@ -43,7 +43,7 @@ else {
 }
 
 # Berechtigungen + Admin-Consent prüfen
-$required = 'Reports.Read.All', 'User.Read.All', 'Organization.Read.All'
+$required = 'Reports.Read.All', 'User.Read.All', 'Organization.Read.All', 'Sites.Read.All'
 $graphSp = Get-MgServicePrincipal -Filter "appId eq '00000003-0000-0000-c000-000000000000'"
 $sp = Get-MgServicePrincipal -Filter "appId eq '$($app.AppId)'"
 $granted = @()

@@ -32,11 +32,13 @@ SQLite-Datenbank historisiert und als Dashboard darstellt:
 1. [Entra Admin Center](https://entra.microsoft.com) → **App-Registrierungen** →
    **Neue Registrierung** (Name z. B. „Speicher-Dashboard", nur dieser Tenant).
 2. **API-Berechtigungen** → Hinzufügen → **Microsoft Graph** →
-   **Anwendungsberechtigungen** → `Reports.Read.All`, `User.Read.All` und
-   `Organization.Read.All` → **Administratorzustimmung erteilen**.
-   (`Reports.Read.All` ist Pflicht; die beiden anderen liefern Lizenztypen und
-   die Erkennung freigegebener Postfächer — fehlen sie, läuft die Erfassung
-   trotzdem, das Dashboard zeigt dann einen Hinweis und keine Lizenzspalte.)
+   **Anwendungsberechtigungen** → `Reports.Read.All`, `User.Read.All`,
+   `Organization.Read.All` und `Sites.Read.All` → **Administratorzustimmung erteilen**.
+   (`Reports.Read.All` ist Pflicht. `User.Read.All`/`Organization.Read.All` liefern
+   Lizenztypen und die Erkennung freigegebener Postfächer; `Sites.Read.All` die
+   Anzeigenamen der SharePoint-Websites, da der Usage-Report in vielen Tenants
+   keine Site-URLs mehr enthält. Fehlen optionale Rechte, läuft die Erfassung
+   trotzdem — das Dashboard zeigt dann einen Hinweis.)
 3. **Zertifikate & Geheimnisse** → **Neuer geheimer Clientschlüssel** (Laufzeit z. B.
    24 Monate) → Wert sofort kopieren.
 4. Notieren: **Verzeichnis-ID (Tenant)**, **Anwendungs-ID (Client)**, **Secret**.

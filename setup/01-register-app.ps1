@@ -19,6 +19,7 @@ $roles = [ordered]@{
     'Reports.Read.All'      = '230c1aed-a721-4c5d-9cb4-a90514e508ef'  # Pflicht: Usage-Reports
     'User.Read.All'         = 'df021288-bdef-4463-88db-98f22de89214'  # optional: Lizenzen
     'Organization.Read.All' = '498476ce-e0fe-48b0-b801-37ba7e2685c6'  # optional: SKU-Namen
+    'Sites.Read.All'        = '332a536c-c7ef-4017-ab91-336970924f0d'  # optional: Website-Namen
 }
 
 $existing = Get-MgApplication -Filter "displayName eq '$appName'"

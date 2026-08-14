@@ -56,6 +56,7 @@ CREATE TABLE IF NOT EXISTS site_snapshots (
     snapshot_date TEXT NOT NULL,
     site_id       TEXT NOT NULL,
     url           TEXT,
+    name          TEXT,
     owner         TEXT,
     template      TEXT,
     last_activity TEXT,
@@ -76,6 +77,10 @@ CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT);
     }
     if ($cols -notcontains 'is_shared') {
         Invoke-Db -Query 'ALTER TABLE snapshots ADD COLUMN is_shared INTEGER NOT NULL DEFAULT 0' | Out-Null
+    }
+    $siteCols = @(Invoke-Db -Query 'PRAGMA table_info(site_snapshots)') | ForEach-Object { $_.name }
+    if ($siteCols -notcontains 'name') {
+        Invoke-Db -Query 'ALTER TABLE site_snapshots ADD COLUMN name TEXT' | Out-Null
     }
 }
 
@@ -151,9 +156,9 @@ function Save-SiteSnapshot {
     )
     $insert = @'
 INSERT OR REPLACE INTO site_snapshots
-    (snapshot_date, site_id, url, owner, template, last_activity,
+    (snapshot_date, site_id, url, name, owner, template, last_activity,
      files, active_files, page_views, storage_bytes, quota_bytes)
-VALUES (@date, @id, @url, @own, @tpl, @act, @f, @af, @pv, @sb, @qb)
+VALUES (@date, @id, @url, @nm, @own, @tpl, @act, @f, @af, @pv, @sb, @qb)
 '@
     if ($script:UseCli) {
         $sb = [Text.StringBuilder]::new()
@@ -163,6 +168,7 @@ VALUES (@date, @id, @url, @own, @tpl, @act, @f, @af, @pv, @sb, @qb)
                 ConvertTo-SqlLiteral $SnapshotDate
                 ConvertTo-SqlLiteral $s.siteId
                 ConvertTo-SqlLiteral ([string]$s.url)
+                ConvertTo-SqlLiteral ([string]$s.name)
                 ConvertTo-SqlLiteral ([string]$s.owner)
                 ConvertTo-SqlLiteral ([string]$s.template)
                 ConvertTo-SqlLiteral ([string]$s.lastActivity)
@@ -174,7 +180,7 @@ VALUES (@date, @id, @url, @own, @tpl, @act, @f, @af, @pv, @sb, @qb)
             ) -join ', '
             [void]$sb.AppendLine(@"
 INSERT OR REPLACE INTO site_snapshots
-    (snapshot_date, site_id, url, owner, template, last_activity,
+    (snapshot_date, site_id, url, name, owner, template, last_activity,
      files, active_files, page_views, storage_bytes, quota_bytes)
 VALUES ($vals);
 "@)
@@ -189,7 +195,8 @@ VALUES ($vals);
             Invoke-SqliteQuery -SQLiteConnection $conn -Query 'BEGIN TRANSACTION'
             foreach ($s in $Sites) {
                 Invoke-SqliteQuery -SQLiteConnection $conn -Query $insert -SqlParameters @{
-                    date = $SnapshotDate; id = $s.siteId; url = [string]$s.url; own = [string]$s.owner
+                    date = $SnapshotDate; id = $s.siteId; url = [string]$s.url
+                    nm = [string]$s.name; own = [string]$s.owner
                     tpl = [string]$s.template; act = [string]$s.lastActivity
                     f = [long]$s.files; af = [long]$s.activeFiles; pv = [long]$s.pageViews
                     sb = [long]$s.storageBytes; qb = [long]$s.quotaBytes
