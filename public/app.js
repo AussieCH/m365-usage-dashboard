@@ -436,6 +436,7 @@ function switchTab(tab) {
   $('#tabSites').classList.toggle('active', !users);
   $('#tabUsers').setAttribute('aria-selected', users);
   $('#tabSites').setAttribute('aria-selected', !users);
+  history.replaceState(null, '', users ? location.pathname : '#sharepoint');
   if (!users && state.siteViewDirty) renderSiteView();
 }
 
@@ -533,6 +534,7 @@ document.querySelectorAll('#siteTable th').forEach((th) => {
   });
 });
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', render);
+if (location.hash === '#sharepoint') switchTab('sites');  // Deep-Link auf den SharePoint-Reiter
 
 loadData().catch((e) => {
   $('#tiles').innerHTML = `<div class="banner critical">Daten konnten nicht geladen werden: ${e.message}</div>`;
