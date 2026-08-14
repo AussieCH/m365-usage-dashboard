@@ -1,0 +1,163 @@
+/* M365 Usage Dashboard — Styles (Token-basiert, Light/Dark) */
+
+:root {
+  color-scheme: light;
+  --page: #f9f9f7;
+  --surface-1: #fcfcfb;
+  --text-primary: #0b0b0b;
+  --text-secondary: #52514e;
+  --text-muted: #898781;
+  --grid: #e1e0d9;
+  --baseline: #c3c2b7;
+  --border: rgba(11, 11, 11, 0.10);
+  --series-mailbox: #2a78d6;   /* Slot 1 blau */
+  --series-onedrive: #eb6834;  /* Slot 2 orange */
+  --status-warning: #fab219;
+  --status-critical: #d03b3b;
+  --accent: #2a78d6;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface-1: #1a1a19;
+    --text-primary: #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted: #898781;
+    --grid: #2c2c2a;
+    --baseline: #383835;
+    --border: rgba(255, 255, 255, 0.10);
+    --series-mailbox: #3987e5;
+    --series-onedrive: #d95926;
+    --accent: #3987e5;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d;
+  --surface-1: #1a1a19;
+  --text-primary: #ffffff;
+  --text-secondary: #c3c2b7;
+  --text-muted: #898781;
+  --grid: #2c2c2a;
+  --baseline: #383835;
+  --border: rgba(255, 255, 255, 0.10);
+  --series-mailbox: #3987e5;
+  --series-onedrive: #d95926;
+  --accent: #3987e5;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--page);
+  color: var(--text-primary);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.wrap { max-width: 1100px; margin: 0 auto; padding: 20px 24px 48px; }
+
+header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 4px 0 16px;
+}
+header h1 { font-size: 20px; font-weight: 650; margin: 0; flex: 1; }
+header .meta { color: var(--text-muted); font-size: 12.5px; text-align: right; }
+
+button, .btn {
+  font: inherit; cursor: pointer;
+  background: var(--surface-1); color: var(--text-primary);
+  border: 1px solid var(--border); border-radius: 8px;
+  padding: 7px 14px;
+}
+button:hover { border-color: var(--baseline); }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+button.primary:hover { filter: brightness(1.08); }
+button:disabled { opacity: 0.5; cursor: default; }
+
+.banner {
+  border: 1px solid var(--border); border-left: 4px solid var(--status-warning);
+  background: var(--surface-1); border-radius: 8px;
+  padding: 10px 14px; margin-bottom: 16px; color: var(--text-secondary);
+}
+.banner strong { color: var(--text-primary); }
+.banner.critical { border-left-color: var(--status-critical); }
+.hidden { display: none !important; }
+
+/* Stat-Kacheln */
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.tile {
+  background: var(--surface-1); border: 1px solid var(--border);
+  border-radius: 10px; padding: 14px 16px;
+}
+.tile .label { color: var(--text-secondary); font-size: 12.5px; display: flex; align-items: center; gap: 7px; }
+.tile .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.tile .value { font-size: 26px; font-weight: 650; margin-top: 4px; }
+.tile .sub { color: var(--text-muted); font-size: 12px; margin-top: 2px; }
+
+/* Karten */
+.card {
+  background: var(--surface-1); border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px; margin-bottom: 16px;
+}
+.card h2 { font-size: 15px; font-weight: 650; margin: 0 0 12px; }
+.chart-box { position: relative; height: 300px; }
+
+/* Tabellen-Kopfzeile mit Filtern */
+.table-tools { display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+.table-tools input[type="search"], .table-tools select {
+  font: inherit; padding: 7px 10px;
+  background: var(--page); color: var(--text-primary);
+  border: 1px solid var(--border); border-radius: 8px;
+}
+.table-tools input[type="search"] { flex: 1; min-width: 220px; }
+
+.table-scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+th {
+  color: var(--text-secondary); font-weight: 600; font-size: 12.5px;
+  cursor: pointer; user-select: none; position: sticky; top: 0; background: var(--surface-1);
+}
+th .arrow { color: var(--text-muted); font-size: 10px; margin-left: 3px; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+td .upn { color: var(--text-muted); font-size: 12px; }
+
+.quota { display: inline-flex; align-items: center; gap: 8px; }
+.quota .bar {
+  width: 70px; height: 6px; border-radius: 3px; background: var(--grid);
+  overflow: hidden; flex: none;
+}
+.quota .bar i { display: block; height: 100%; border-radius: 3px; }
+.quota.warn .bar i { background: var(--status-warning) !important; }
+.quota.crit .bar i { background: var(--status-critical) !important; }
+.quota .pct { color: var(--text-muted); font-size: 12px; min-width: 34px; }
+.quota .flag { font-size: 12px; }
+
+tfoot td { color: var(--text-muted); border-bottom: none; padding-top: 10px; }
+
+/* Einstellungen (Dialog) */
+dialog {
+  border: 1px solid var(--border); border-radius: 12px;
+  background: var(--surface-1); color: var(--text-primary);
+  padding: 22px; width: min(460px, 92vw);
+}
+dialog::backdrop { background: rgba(0, 0, 0, 0.45); }
+dialog h2 { margin: 0 0 14px; font-size: 16px; }
+dialog label { display: block; font-size: 12.5px; color: var(--text-secondary); margin: 12px 0 4px; }
+dialog input[type="text"], dialog input[type="password"] {
+  width: 100%; font: inherit; padding: 8px 10px;
+  background: var(--page); color: var(--text-primary);
+  border: 1px solid var(--border); border-radius: 8px;
+}
+dialog .row { display: flex; gap: 10px; margin-top: 18px; align-items: center; }
+dialog .row .spacer { flex: 1; }
+dialog .check { display: flex; align-items: center; gap: 8px; margin-top: 14px; color: var(--text-secondary); }
+dialog .msg { margin-top: 12px; font-size: 12.5px; min-height: 18px; }
+dialog .msg.ok { color: var(--text-secondary); }
+dialog .msg.err { color: var(--status-critical); }
+
+.spin { display: inline-block; animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }

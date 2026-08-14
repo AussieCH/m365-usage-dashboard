@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>M365 Speicher-Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>M365 Speicher-Dashboard</h1>
+      <div class="meta" id="metaInfo"></div>
+      <button id="btnCollect" title="Daten jetzt vom Tenant abrufen">Jetzt erfassen</button>
+      <button id="btnSettings" title="Einstellungen">⚙︎ Einstellungen</button>
+    </header>
+
+    <div id="bannerSetup" class="banner hidden">
+      <strong>Noch nicht konfiguriert.</strong>
+      Bitte in den <a href="#" id="linkSettings">Einstellungen</a> Tenant-ID, Client-ID und Client-Secret hinterlegen
+      — oder den Demo-Modus aktivieren.
+    </div>
+    <div id="bannerConcealed" class="banner critical hidden">
+      <strong>Benutzernamen sind pseudonymisiert.</strong>
+      Im Microsoft 365 Admin Center unter <em>Einstellungen → Organisationseinstellungen → Berichte</em> die Option
+      «Verborgene Benutzer-, Gruppen- und Websitenamen in allen Berichten anzeigen» aktivieren, danach neu erfassen.
+    </div>
+
+    <section class="tiles" id="tiles"></section>
+
+    <section class="card">
+      <h2>Belegung über Zeit</h2>
+      <div class="chart-box"><canvas id="historyChart" role="img"
+        aria-label="Liniendiagramm: Gesamtbelegung Mailbox und OneDrive über die Zeit"></canvas></div>
+    </section>
+
+    <section class="card">
+      <h2>Benutzer</h2>
+      <div class="table-tools">
+        <input type="search" id="searchBox" placeholder="Suchen (Name oder Benutzername) …">
+        <select id="filterSelect">
+          <option value="all">Alle Benutzer</option>
+          <option value="mbx80">Mailbox &gt; 80 % der Quota</option>
+          <option value="od80">OneDrive &gt; 80 % der Quota</option>
+          <option value="top10">Top 10 Gesamtbelegung</option>
+        </select>
+      </div>
+      <div class="table-scroll">
+        <table id="userTable">
+          <thead>
+            <tr>
+              <th data-key="displayName">Benutzer<span class="arrow"></span></th>
+              <th class="num" data-key="mailboxBytes">Mailbox<span class="arrow"></span></th>
+              <th data-key="mailboxPct">Mailbox-Quota<span class="arrow"></span></th>
+              <th class="num" data-key="onedriveBytes">OneDrive<span class="arrow"></span></th>
+              <th data-key="onedrivePct">OneDrive-Quota<span class="arrow"></span></th>
+              <th class="num" data-key="totalBytes">Gesamt<span class="arrow"></span></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+          <tfoot><tr><td colspan="6" id="tableFoot"></td></tr></tfoot>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <dialog id="settingsDialog">
+    <h2>Einstellungen</h2>
+    <form method="dialog" id="settingsForm">
+      <label for="inTenant">Tenant-ID (Verzeichnis-ID)</label>
+      <input type="text" id="inTenant" placeholder="z. B. 3f2a…-…" autocomplete="off">
+      <label for="inClient">Client-ID (Anwendungs-ID)</label>
+      <input type="text" id="inClient" autocomplete="off">
+      <label for="inSecret">Client-Secret</label>
+      <input type="password" id="inSecret" autocomplete="off" placeholder="">
+      <div class="check">
+        <input type="checkbox" id="inDemo">
+        <label for="inDemo" style="margin:0">Demo-Modus (Beispieldaten statt Tenant-Abruf)</label>
+      </div>
+      <div class="msg" id="settingsMsg"></div>
+      <div class="row">
+        <button type="button" id="btnTest">Verbindung testen</button>
+        <span class="spacer"></span>
+        <button type="button" id="btnClose">Schliessen</button>
+        <button type="submit" class="primary" id="btnSave">Speichern</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="chart.umd.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
