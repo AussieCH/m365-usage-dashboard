@@ -10,8 +10,9 @@
   --grid: #e1e0d9;
   --baseline: #c3c2b7;
   --border: rgba(11, 11, 11, 0.10);
-  --series-mailbox: #2a78d6;   /* Slot 1 blau */
-  --series-onedrive: #eb6834;  /* Slot 2 orange */
+  --series-mailbox: #2a78d6;    /* Slot 1 blau */
+  --series-onedrive: #eb6834;   /* Slot 2 orange */
+  --series-sharepoint: #1baf7a; /* Slot 3 aqua */
   --status-warning: #fab219;
   --status-critical: #d03b3b;
   --accent: #2a78d6;
@@ -29,6 +30,7 @@
     --border: rgba(255, 255, 255, 0.10);
     --series-mailbox: #3987e5;
     --series-onedrive: #d95926;
+    --series-sharepoint: #199e70;
     --accent: #3987e5;
   }
 }
@@ -44,6 +46,7 @@
   --border: rgba(255, 255, 255, 0.10);
   --series-mailbox: #3987e5;
   --series-onedrive: #d95926;
+  --series-sharepoint: #199e70;
   --accent: #3987e5;
 }
 

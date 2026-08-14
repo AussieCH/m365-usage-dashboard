@@ -22,6 +22,18 @@ $script:SkuNames = @{
     'EXCHANGEDESKLESS'         = 'Exchange Online Kiosk'
 }
 
+# Kostenlose Zusatz-SKUs, die die Lizenz-Aufschlüsselung nur verrauschen würden
+$script:IgnoredSkus = @(
+    'FLOW_FREE'                # Power Automate Free
+    'TEAMS_EXPLORATORY'
+    'TEAMS_COMMERCIAL_TRIAL'
+    'POWER_BI_STANDARD'        # Power BI (kostenlos)
+    'POWERAPPS_VIRAL'
+    'CCIBOTS_PRIVPREV_VIRAL'
+    'RIGHTSMANAGEMENT_ADHOC'
+    'WINDOWS_STORE'
+)
+
 function Get-GraphToken {
     param(
         [Parameter(Mandatory)][string]$TenantId,
@@ -147,6 +159,7 @@ function Get-UsageSnapshot {
         $skus = Get-GraphJsonPaged -Token $token -Uri 'https://graph.microsoft.com/v1.0/subscribedSkus'
         $skuMap = @{}
         foreach ($s in $skus) {
+            if ($script:IgnoredSkus -contains $s.skuPartNumber) { continue }
             $name = $script:SkuNames[$s.skuPartNumber]
             $skuMap[$s.skuId] = if ($name) { $name } else { $s.skuPartNumber }
         }

@@ -125,37 +125,45 @@ function renderSiteView() {
   state.siteViewDirty = false;
 }
 
+// Historien (Benutzer + Sites) über das Snapshot-Datum zusammenführen
+function mergedHistory() {
+  const mbx = {}, od = {}, sp = {};
+  for (const h of state.history) {
+    mbx[h.snapshot_date] = Number(h.mailbox_total);
+    od[h.snapshot_date] = Number(h.onedrive_total);
+  }
+  for (const h of state.siteHistory) sp[h.snapshot_date] = Number(h.storage_total);
+  const dates = [...new Set([...Object.keys(mbx), ...Object.keys(sp)])].sort();
+  return { dates, mbx, od, sp };
+}
+
 function renderTiles() {
-  const mbx = state.users.reduce((s, u) => s + u.mailboxBytes, 0);
-  const od = state.users.reduce((s, u) => s + u.onedriveBytes, 0);
+  const mbxT = state.users.reduce((s, u) => s + u.mailboxBytes, 0);
+  const odT = state.users.reduce((s, u) => s + u.onedriveBytes, 0);
+  const spT = state.sites.reduce((s, x) => s + x.storageBytes, 0);
   const css = getComputedStyle(document.documentElement);
   const cMbx = css.getPropertyValue('--series-mailbox').trim();
   const cOd = css.getPropertyValue('--series-onedrive').trim();
+  const cSp = css.getPropertyValue('--series-sharepoint').trim();
 
-  // Zuwachs seit erstem Snapshot
+  // Zuwachs seit erstem Snapshot (Mail + OneDrive + SharePoint)
+  const m = mergedHistory();
   let growth = '';
-  if (state.history.length >= 2) {
-    const first = state.history[0], last = state.history[state.history.length - 1];
-    const delta = (Number(last.mailbox_total) + Number(last.onedrive_total)) -
-                  (Number(first.mailbox_total) + Number(first.onedrive_total));
-    growth = (delta >= 0 ? '+' : '−') + fmtBytes(Math.abs(delta)) + ' seit ' + fmtDate(first.snapshot_date);
+  if (m.dates.length >= 2) {
+    const total = (d) => (m.mbx[d] || 0) + (m.od[d] || 0) + (m.sp[d] || 0);
+    const first = m.dates[0], last = m.dates[m.dates.length - 1];
+    const delta = total(last) - total(first);
+    growth = (delta >= 0 ? '+' : '−') + fmtBytes(Math.abs(delta)) + ' seit ' + fmtDate(first);
   }
 
   $('#tiles').innerHTML = `
     <div class="tile">
-      <div class="label">Gesamtbelegung</div>
-      <div class="value">${fmtBytes(mbx + od)}</div>
+      <div class="label">Gesamtbelegung (Mail + OneDrive + SharePoint)</div>
+      <div class="value">${fmtBytes(mbxT + odT + spT)}</div>
+      <div class="sub"><span class="dot" style="background:${cMbx}"></span> Mailboxen: ${fmtBytes(mbxT)}</div>
+      <div class="sub"><span class="dot" style="background:${cOd}"></span> OneDrive: ${fmtBytes(odT)}</div>
+      <div class="sub"><span class="dot" style="background:${cSp}"></span> SharePoint: ${fmtBytes(spT)}</div>
       <div class="sub">${growth || '&nbsp;'}</div>
-    </div>
-    <div class="tile">
-      <div class="label"><span class="dot" style="background:${cMbx}"></span>Mailboxen</div>
-      <div class="value">${fmtBytes(mbx)}</div>
-      <div class="sub">&nbsp;</div>
-    </div>
-    <div class="tile">
-      <div class="label"><span class="dot" style="background:${cOd}"></span>OneDrive</div>
-      <div class="value">${fmtBytes(od)}</div>
-      <div class="sub">&nbsp;</div>
     </div>
     <div class="tile">
       <div class="label">Benutzer</div>
@@ -182,14 +190,16 @@ function renderChart() {
   const css = getComputedStyle(document.documentElement);
   const cMbx = css.getPropertyValue('--series-mailbox').trim();
   const cOd = css.getPropertyValue('--series-onedrive').trim();
+  const cSp = css.getPropertyValue('--series-sharepoint').trim();
   const cGrid = css.getPropertyValue('--grid').trim();
   const cMuted = css.getPropertyValue('--text-muted').trim();
   const cInk = css.getPropertyValue('--text-primary').trim();
   const cSurface = css.getPropertyValue('--surface-1').trim();
 
-  const labels = state.history.map((h) => fmtDate(h.snapshot_date));
-  const dsMbx = state.history.map((h) => Number(h.mailbox_total));
-  const dsOd = state.history.map((h) => Number(h.onedrive_total));
+  const m = mergedHistory();
+  const labels = m.dates.map((d) => fmtDate(d));
+  const pick = (map) => m.dates.map((d) => map[d] ?? null);
+  const lineOpts = { borderWidth: 2, pointRadius: 3, pointHoverRadius: 5, tension: 0.15, spanGaps: true };
 
   if (state.chart) state.chart.destroy();
   state.chart = new Chart($('#historyChart'), {
@@ -197,10 +207,9 @@ function renderChart() {
     data: {
       labels,
       datasets: [
-        { label: 'Mailboxen', data: dsMbx, borderColor: cMbx, backgroundColor: cMbx,
-          borderWidth: 2, pointRadius: 3, pointHoverRadius: 5, tension: 0.15 },
-        { label: 'OneDrive', data: dsOd, borderColor: cOd, backgroundColor: cOd,
-          borderWidth: 2, pointRadius: 3, pointHoverRadius: 5, tension: 0.15 },
+        { label: 'Mailboxen', data: pick(m.mbx), borderColor: cMbx, backgroundColor: cMbx, ...lineOpts },
+        { label: 'OneDrive', data: pick(m.od), borderColor: cOd, backgroundColor: cOd, ...lineOpts },
+        { label: 'SharePoint', data: pick(m.sp), borderColor: cSp, backgroundColor: cSp, ...lineOpts },
       ],
     },
     options: {
@@ -323,7 +332,7 @@ function renderSiteTiles() {
 
 function renderSiteChart() {
   const css = getComputedStyle(document.documentElement);
-  const cSeries = css.getPropertyValue('--series-mailbox').trim(); // eine Serie → Slot 1 (blau)
+  const cSeries = css.getPropertyValue('--series-sharepoint').trim(); // SharePoint = Slot 3, wie im Übersichts-Chart
   const cGrid = css.getPropertyValue('--grid').trim();
   const cMuted = css.getPropertyValue('--text-muted').trim();
   const cInk = css.getPropertyValue('--text-primary').trim();
