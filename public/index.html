@@ -20,6 +20,10 @@
       Bitte in den <a href="#" id="linkSettings">Einstellungen</a> Tenant-ID, Client-ID und Client-Secret hinterlegen
       — oder den Demo-Modus aktivieren.
     </div>
+    <div id="bannerLicense" class="banner hidden">
+      <strong>Lizenzinformationen fehlen.</strong>
+      <span id="bannerLicenseText"></span>
+    </div>
     <div id="bannerConcealed" class="banner critical hidden">
       <strong>Benutzernamen sind pseudonymisiert.</strong>
       Im Microsoft 365 Admin Center unter <em>Einstellungen → Organisationseinstellungen → Berichte</em> die Option
@@ -43,6 +47,7 @@
           <option value="mbx80">Mailbox &gt; 80 % der Quota</option>
           <option value="od80">OneDrive &gt; 80 % der Quota</option>
           <option value="top10">Top 10 Gesamtbelegung</option>
+          <option value="shared">Freigegebene Postfächer</option>
         </select>
       </div>
       <div class="table-scroll">
@@ -50,6 +55,7 @@
           <thead>
             <tr>
               <th data-key="displayName">Benutzer<span class="arrow"></span></th>
+              <th data-key="licenses">Lizenz<span class="arrow"></span></th>
               <th class="num" data-key="mailboxBytes">Mailbox<span class="arrow"></span></th>
               <th data-key="mailboxPct">Mailbox-Quota<span class="arrow"></span></th>
               <th class="num" data-key="onedriveBytes">OneDrive<span class="arrow"></span></th>
@@ -58,7 +64,7 @@
             </tr>
           </thead>
           <tbody></tbody>
-          <tfoot><tr><td colspan="6" id="tableFoot"></td></tr></tfoot>
+          <tfoot><tr><td colspan="7" id="tableFoot"></td></tr></tfoot>
         </table>
       </div>
     </section>

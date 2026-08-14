@@ -4,10 +4,13 @@ OnePage-Web-App (PowerShell/Pode), die per Microsoft Graph die Postfachgrössen 
 OneDrive-Belegung aller Benutzer eines Microsoft-365-Tenants ausliest, in einer
 SQLite-Datenbank historisiert und als Dashboard darstellt:
 
-- **Kacheln:** Gesamtbelegung, Mailboxen, OneDrive, Benutzerzahl, Zuwachs seit Beginn
+- **Kacheln:** Gesamtbelegung, Mailboxen, OneDrive, Zuwachs seit Beginn sowie
+  Benutzerzahl mit Aufschlüsselung pro Lizenztyp (inkl. freigegebener Postfächer)
 - **Diagramm:** Belegung über Zeit (Mailbox / OneDrive getrennt, Tooltip mit Gesamt)
 - **Benutzerliste:** sortierbar (Klick auf Spaltenkopf), Volltextsuche, Filter
-  (Quota > 80 %, Top 10), Quota-Balken mit Warnschwellen (80 % / 95 %)
+  (Quota > 80 %, Top 10, freigegebene Postfächer), Lizenzspalte, Quota-Balken
+  mit Warnschwellen (80 % / 95 %). Freigegebene Postfächer werden erkannt
+  (Postfach vorhanden, Konto deaktiviert, keine Lizenz) und separat ausgewiesen
 - **Einstellungen im UI:** Tenant-ID, Client-ID, Client-Secret (verschlüsselt
   gespeichert), Demo-Modus
 - **Automatik:** eingebauter Wochen-Schedule (Standard: Montag 06:00) erfasst die
@@ -25,7 +28,11 @@ SQLite-Datenbank historisiert und als Dashboard darstellt:
 1. [Entra Admin Center](https://entra.microsoft.com) → **App-Registrierungen** →
    **Neue Registrierung** (Name z. B. „Speicher-Dashboard", nur dieser Tenant).
 2. **API-Berechtigungen** → Hinzufügen → **Microsoft Graph** →
-   **Anwendungsberechtigungen** → `Reports.Read.All` → **Administratorzustimmung erteilen**.
+   **Anwendungsberechtigungen** → `Reports.Read.All`, `User.Read.All` und
+   `Organization.Read.All` → **Administratorzustimmung erteilen**.
+   (`Reports.Read.All` ist Pflicht; die beiden anderen liefern Lizenztypen und
+   die Erkennung freigegebener Postfächer — fehlen sie, läuft die Erfassung
+   trotzdem, das Dashboard zeigt dann einen Hinweis und keine Lizenzspalte.)
 3. **Zertifikate & Geheimnisse** → **Neuer geheimer Clientschlüssel** (Laufzeit z. B.
    24 Monate) → Wert sofort kopieren.
 4. Notieren: **Verzeichnis-ID (Tenant)**, **Anwendungs-ID (Client)**, **Secret**.

@@ -23,6 +23,7 @@ function Invoke-UsageCollection {
             Save-Snapshot -SnapshotDate $date -Users $users
         }
         Set-MetaValue -Key 'concealed' -Value 'false'
+        Set-MetaValue -Key 'licenseWarning' -Value ''
         return [pscustomobject]@{ ok = $true; users = $snap.users.Count; date = $today.ToString('yyyy-MM-dd'); demo = $true }
     }
 
@@ -37,6 +38,7 @@ function Invoke-UsageCollection {
     }
     Save-Snapshot -SnapshotDate $snap.reportDate -Users $snap.users
     Set-MetaValue -Key 'concealed' -Value ([string]$snap.concealed).ToLower()
+    Set-MetaValue -Key 'licenseWarning' -Value ([string]$snap.licenseWarning)
 
     [pscustomobject]@{ ok = $true; users = $snap.users.Count; date = $snap.reportDate; concealed = $snap.concealed }
 }
@@ -52,6 +54,7 @@ function Get-DashboardData {
             lastCollection = (Get-MetaValue -Key 'lastCollection')
             snapshotDate   = (Get-LatestSnapshotDate)
             concealed      = ((Get-MetaValue -Key 'concealed') -eq 'true')
+            licenseWarning = [string](Get-MetaValue -Key 'licenseWarning')
         }
         history = @(Get-History)
         users   = @(Get-LatestUsers)

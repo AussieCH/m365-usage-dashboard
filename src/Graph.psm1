@@ -1,5 +1,26 @@
 # Graph.psm1 — Microsoft Graph: Token holen und Usage-Reports (CSV) abrufen.
-# Benötigte App-Berechtigung (Application): Reports.Read.All mit Admin-Consent.
+# Benötigte App-Berechtigungen (Application, mit Admin-Consent):
+#   Reports.Read.All                       — Usage-Reports (Pflicht)
+#   User.Read.All + Organization.Read.All  — Lizenzen & freigegebene Postfächer (optional)
+
+# Gängige SKU-Teilenummern → lesbare Produktnamen (Rest fällt auf die Teilenummer zurück)
+$script:SkuNames = @{
+    'O365_BUSINESS_ESSENTIALS' = 'Microsoft 365 Business Basic'
+    'O365_BUSINESS_PREMIUM'    = 'Microsoft 365 Business Standard'
+    'SPB'                      = 'Microsoft 365 Business Premium'
+    'O365_BUSINESS'            = 'Microsoft 365 Apps for Business'
+    'OFFICESUBSCRIPTION'       = 'Microsoft 365 Apps for Enterprise'
+    'SPE_E3'                   = 'Microsoft 365 E3'
+    'SPE_E5'                   = 'Microsoft 365 E5'
+    'SPE_F1'                   = 'Microsoft 365 F3'
+    'M365_F1'                  = 'Microsoft 365 F1'
+    'STANDARDPACK'             = 'Office 365 E1'
+    'ENTERPRISEPACK'           = 'Office 365 E3'
+    'ENTERPRISEPREMIUM'        = 'Office 365 E5'
+    'EXCHANGESTANDARD'         = 'Exchange Online (Plan 1)'
+    'EXCHANGEENTERPRISE'       = 'Exchange Online (Plan 2)'
+    'EXCHANGEDESKLESS'         = 'Exchange Online Kiosk'
+}
 
 function Get-GraphToken {
     param(
@@ -32,6 +53,20 @@ function Get-GraphReportCsv {
     $text.TrimStart([char]0xFEFF) | ConvertFrom-Csv
 }
 
+function Get-GraphJsonPaged {
+    param(
+        [Parameter(Mandatory)][string]$Token,
+        [Parameter(Mandatory)][string]$Uri
+    )
+    $items = @()
+    while ($Uri) {
+        $r = Invoke-RestMethod -Uri $Uri -Headers @{ Authorization = "Bearer $Token" } -ErrorAction Stop
+        $items += $r.value
+        $Uri = $r.'@odata.nextLink'
+    }
+    $items
+}
+
 function Get-UsageSnapshot {
     <#
       Ruft Mailbox- und OneDrive-Report ab und liefert pro Benutzer einen
@@ -61,6 +96,9 @@ function Get-UsageSnapshot {
             onedriveBytes      = 0L
             onedriveQuotaBytes = 0L
             onedriveFiles      = 0L
+            licenses           = ''
+            isShared           = 0
+            hasMailbox         = $true
         }
     }
     foreach ($row in $od) {
@@ -73,6 +111,7 @@ function Get-UsageSnapshot {
                 upn = $upn; displayName = $row.'Owner Display Name'
                 mailboxBytes = 0L; mailboxQuotaBytes = 0L; mailboxItems = 0L
                 onedriveBytes = 0L; onedriveQuotaBytes = 0L; onedriveFiles = 0L
+                licenses = ''; isShared = 0; hasMailbox = $false
             }
         }
         $u = $users[$key]
@@ -80,6 +119,37 @@ function Get-UsageSnapshot {
         $u.onedriveQuotaBytes = [long]($row.'Storage Allocated (Byte)' | ForEach-Object { if ($_) { $_ } else { 0 } })
         $u.onedriveFiles      = [long]($row.'File Count'               | ForEach-Object { if ($_) { $_ } else { 0 } })
         if (-not $u.displayName) { $u.displayName = $row.'Owner Display Name' }
+    }
+
+    # Lizenzen und freigegebene Postfächer ergänzen (optional — braucht
+    # User.Read.All + Organization.Read.All; ohne diese Rechte läuft der Rest weiter)
+    $licenseWarning = ''
+    try {
+        $skus = Get-GraphJsonPaged -Token $token -Uri 'https://graph.microsoft.com/v1.0/subscribedSkus'
+        $skuMap = @{}
+        foreach ($s in $skus) {
+            $name = $script:SkuNames[$s.skuPartNumber]
+            $skuMap[$s.skuId] = if ($name) { $name } else { $s.skuPartNumber }
+        }
+        $adUsers = Get-GraphJsonPaged -Token $token `
+            -Uri 'https://graph.microsoft.com/v1.0/users?$select=userPrincipalName,accountEnabled,assignedLicenses&$top=999'
+        foreach ($au in $adUsers) {
+            if (-not $au.userPrincipalName) { continue }
+            $key = $au.userPrincipalName.ToLowerInvariant()
+            if (-not $users.Contains($key)) { continue }
+            $u = $users[$key]
+            $lic = @($au.assignedLicenses | ForEach-Object { $skuMap[$_.skuId] } | Where-Object { $_ }) | Sort-Object -Unique
+            if ($lic.Count -gt 0) {
+                $u.licenses = $lic -join ' + '
+            }
+            elseif (-not $au.accountEnabled -and $u.hasMailbox) {
+                # Kein Lizenz + Konto deaktiviert + Postfach vorhanden = freigegebenes Postfach
+                $u.isShared = 1
+            }
+        }
+    }
+    catch {
+        $licenseWarning = "Lizenzdaten nicht abrufbar (fehlen der App User.Read.All und Organization.Read.All?): $($_.Exception.Message)"
     }
 
     # Pseudonymisierte Reports erkennen: UPNs sind dann Hashes ohne '@'
@@ -90,9 +160,10 @@ function Get-UsageSnapshot {
     if (-not $refreshDate) { $refreshDate = (Get-Date).ToString('yyyy-MM-dd') }
 
     [pscustomobject]@{
-        reportDate = $refreshDate
-        concealed  = $concealed
-        users      = @($users.Values | ForEach-Object { [pscustomobject]$_ })
+        reportDate     = $refreshDate
+        concealed      = $concealed
+        licenseWarning = $licenseWarning
+        users          = @($users.Values | ForEach-Object { [pscustomobject]$_ })
     }
 }
 
@@ -104,8 +175,13 @@ function Get-DemoSnapshot {
              'Gina Brunner','Hans Keller','Iris Baumann','Jonas Graf','Karin Suter','Luca Moser',
              'Mara Fischer','Nico Weber','Olivia Gerber','Pascal Roth','Regula Zbinden','Simon Wyss',
              'Tanja Hofer','Urs Schmid','Vera Lang','Walter Egli','Yvonne Marti','Reto Bühler','Sandra Vogel'
+    $i = 0
     $users = foreach ($n in $names) {
         $upn = ($n.ToLower() -replace 'ä','ae' -replace 'ö','oe' -replace 'ü','ue' -replace ' ','.') + '@demo.example'
+        $lic = if ($i -lt 14) { 'Microsoft 365 Business Standard' }
+               elseif ($i -lt 20) { 'Microsoft 365 Business Premium' }
+               else { 'Microsoft 365 E3' }
+        $i++
         [pscustomobject]@{
             upn = $upn; displayName = $n
             mailboxBytes       = [long]($rand.NextDouble() * 40GB + 200MB)
@@ -114,13 +190,29 @@ function Get-DemoSnapshot {
             onedriveBytes      = [long]($rand.NextDouble() * 300GB + 1GB)
             onedriveQuotaBytes = 1TB
             onedriveFiles      = [long]($rand.Next(500, 40000))
+            licenses           = $lic
+            isShared           = 0
+        }
+    }
+    $shared = foreach ($n in 'Info', 'Support', 'Buchhaltung') {
+        [pscustomobject]@{
+            upn = $n.ToLower() + '@demo.example'; displayName = $n
+            mailboxBytes       = [long]($rand.NextDouble() * 15GB + 500MB)
+            mailboxQuotaBytes  = 50GB
+            mailboxItems       = [long]($rand.Next(5000, 60000))
+            onedriveBytes      = 0L
+            onedriveQuotaBytes = 0L
+            onedriveFiles      = 0L
+            licenses           = ''
+            isShared           = 1
         }
     }
     [pscustomobject]@{
-        reportDate = (Get-Date).ToString('yyyy-MM-dd')
-        concealed  = $false
-        users      = @($users)
+        reportDate     = (Get-Date).ToString('yyyy-MM-dd')
+        concealed      = $false
+        licenseWarning = ''
+        users          = @($users) + @($shared)
     }
 }
 
-Export-ModuleMember -Function Get-GraphToken, Get-GraphReportCsv, Get-UsageSnapshot, Get-DemoSnapshot
+Export-ModuleMember -Function Get-GraphToken, Get-GraphReportCsv, Get-GraphJsonPaged, Get-UsageSnapshot, Get-DemoSnapshot

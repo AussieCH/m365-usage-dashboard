@@ -46,6 +46,8 @@ async function loadData() {
       mailboxPct: mbq > 0 ? (mailboxBytes / mbq) * 100 : null,
       onedrivePct: odq > 0 ? (onedriveBytes / odq) * 100 : null,
       totalBytes: mailboxBytes + onedriveBytes,
+      licenses: u.licenses || '',
+      isShared: Number(u.is_shared) === 1,
     };
   });
   render();
@@ -56,6 +58,8 @@ function render() {
   const st = state.status || {};
   $('#bannerSetup').classList.toggle('hidden', !!st.configured);
   $('#bannerConcealed').classList.toggle('hidden', !st.concealed);
+  $('#bannerLicense').classList.toggle('hidden', !st.licenseWarning);
+  $('#bannerLicenseText').textContent = st.licenseWarning || '';
   $('#metaInfo').innerHTML = [
     st.demoMode ? '<strong>Demo-Modus</strong>' : '',
     st.snapshotDate ? 'Snapshot: ' + fmtDate(st.snapshotDate) : '',
@@ -102,8 +106,22 @@ function renderTiles() {
     <div class="tile">
       <div class="label">Benutzer</div>
       <div class="value">${state.users.length}</div>
-      <div class="sub">&nbsp;</div>
+      ${licenseBreakdown()}
     </div>`;
+}
+
+function licenseBreakdown() {
+  // Benutzer pro Lizenztyp zählen; freigegebene Postfächer als eigene Kategorie
+  const counts = new Map();
+  for (const u of state.users) {
+    const key = u.isShared ? 'Freigegebene Postfächer' : (u.licenses || 'Ohne Lizenz');
+    counts.set(key, (counts.get(key) || 0) + 1);
+  }
+  if (counts.size === 1 && counts.has('Ohne Lizenz')) return '<div class="sub">&nbsp;</div>';
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([name, n]) => `<div class="sub">${n} × ${name}</div>`)
+    .join('');
 }
 
 function renderChart() {
@@ -177,6 +195,7 @@ function filteredUsers() {
   if (mode === 'mbx80') list = list.filter((u) => u.mailboxPct != null && u.mailboxPct > 80);
   if (mode === 'od80') list = list.filter((u) => u.onedrivePct != null && u.onedrivePct > 80);
   if (mode === 'top10') list = [...list].sort((a, b) => b.totalBytes - a.totalBytes).slice(0, 10);
+  if (mode === 'shared') list = list.filter((u) => u.isShared);
 
   const k = state.sortKey, dir = state.sortDir;
   list.sort((a, b) => {
@@ -196,6 +215,7 @@ function renderTable() {
   $('#userTable tbody').innerHTML = list.map((u) => `
     <tr>
       <td>${u.displayName}<br><span class="upn">${u.upn}</span></td>
+      <td class="lic">${u.isShared ? '<span class="chip">Freigegeben</span>' : (u.licenses || '<span class="upn">–</span>')}</td>
       <td class="num">${fmtBytes(u.mailboxBytes)}</td>
       <td>${quotaCell(u.mailboxPct, cMbx)}</td>
       <td class="num">${fmtBytes(u.onedriveBytes)}</td>

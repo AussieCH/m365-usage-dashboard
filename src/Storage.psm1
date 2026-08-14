@@ -48,10 +48,21 @@ CREATE TABLE IF NOT EXISTS snapshots (
     onedrive_bytes       INTEGER NOT NULL DEFAULT 0,
     onedrive_quota_bytes INTEGER NOT NULL DEFAULT 0,
     onedrive_files       INTEGER NOT NULL DEFAULT 0,
+    licenses             TEXT NOT NULL DEFAULT '',
+    is_shared            INTEGER NOT NULL DEFAULT 0,
     PRIMARY KEY (snapshot_date, upn)
 );
 CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT);
 '@ | Out-Null
+
+    # Migration älterer Datenbanken ohne Lizenzspalten
+    $cols = @(Invoke-Db -Query 'PRAGMA table_info(snapshots)') | ForEach-Object { $_.name }
+    if ($cols -notcontains 'licenses') {
+        Invoke-Db -Query "ALTER TABLE snapshots ADD COLUMN licenses TEXT NOT NULL DEFAULT ''" | Out-Null
+    }
+    if ($cols -notcontains 'is_shared') {
+        Invoke-Db -Query 'ALTER TABLE snapshots ADD COLUMN is_shared INTEGER NOT NULL DEFAULT 0' | Out-Null
+    }
 }
 
 function Save-Snapshot {
@@ -62,8 +73,8 @@ function Save-Snapshot {
     $insert = @'
 INSERT OR REPLACE INTO snapshots
     (snapshot_date, upn, display_name, mailbox_bytes, mailbox_quota_bytes, mailbox_items,
-     onedrive_bytes, onedrive_quota_bytes, onedrive_files)
-VALUES (@date, @upn, @name, @mb, @mbq, @mbi, @od, @odq, @odf)
+     onedrive_bytes, onedrive_quota_bytes, onedrive_files, licenses, is_shared)
+VALUES (@date, @upn, @name, @mb, @mbq, @mbi, @od, @odq, @odf, @lic, @sh)
 '@
     if ($script:UseCli) {
         # Alle Inserts als ein Skript in einer Transaktion ausführen
@@ -80,11 +91,13 @@ VALUES (@date, @upn, @name, @mb, @mbq, @mbi, @od, @odq, @odf)
                 ConvertTo-SqlLiteral ([long]$u.onedriveBytes)
                 ConvertTo-SqlLiteral ([long]$u.onedriveQuotaBytes)
                 ConvertTo-SqlLiteral ([long]$u.onedriveFiles)
+                ConvertTo-SqlLiteral ([string]$u.licenses)
+                ConvertTo-SqlLiteral ([int]$u.isShared)
             ) -join ', '
             [void]$sb.AppendLine(@"
 INSERT OR REPLACE INTO snapshots
     (snapshot_date, upn, display_name, mailbox_bytes, mailbox_quota_bytes, mailbox_items,
-     onedrive_bytes, onedrive_quota_bytes, onedrive_files)
+     onedrive_bytes, onedrive_quota_bytes, onedrive_files, licenses, is_shared)
 VALUES ($vals);
 "@)
         }
@@ -101,6 +114,7 @@ VALUES ($vals);
                     date = $SnapshotDate; upn = $u.upn; name = $u.displayName
                     mb = [long]$u.mailboxBytes; mbq = [long]$u.mailboxQuotaBytes; mbi = [long]$u.mailboxItems
                     od = [long]$u.onedriveBytes; odq = [long]$u.onedriveQuotaBytes; odf = [long]$u.onedriveFiles
+                    lic = [string]$u.licenses; sh = [int]$u.isShared
                 }
             }
             Invoke-SqliteQuery -SQLiteConnection $conn -Query 'COMMIT'
@@ -146,7 +160,7 @@ function Get-UserHistory {
 }
 
 function Set-MetaValue {
-    param([Parameter(Mandatory)][string]$Key, [Parameter(Mandatory)][string]$Value)
+    param([Parameter(Mandatory)][string]$Key, [Parameter(Mandatory)][AllowEmptyString()][string]$Value)
     Invoke-Db -Query 'INSERT OR REPLACE INTO meta (key, value) VALUES (@k, @v)' -Params @{ k = $Key; v = $Value } | Out-Null
 }
 
