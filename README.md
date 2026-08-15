@@ -114,3 +114,10 @@ werden (DPAPI ist benutzergebunden).
 | `GET/POST /api/settings` | Konfiguration lesen/schreiben (Secret nur schreibend) |
 | `POST /api/test` | Verbindungstest (Token-Abruf) |
 | `POST /api/collect` | Erfassung sofort ausführen |
+
+## Unterstützung
+
+Das Dashboard ist kostenlos und Open Source — von Nutzern für Nutzer.
+Wer das Projekt unterstützen möchte:
+
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-☕-ffdd00?style=for-the-badge)](https://buymeacoffee.com/timme)
