@@ -412,7 +412,7 @@ function renderSiteTable() {
   const list = filteredSites();
   $('#siteTable tbody').innerHTML = list.map((s) => `
     <tr>
-      <td>${s.name}<br><span class="upn">${s.url || s.siteId}</span></td>
+      <td>${s.name}<span class="upn" title="${s.url || s.siteId}">${s.url || s.siteId}</span></td>
       <td class="lic">${s.templateLabel}</td>
       <td class="lic">${s.owner || '–'}</td>
       <td class="num"><strong>${fmtBytes(s.storageBytes)}</strong></td>
