@@ -75,7 +75,9 @@ async function loadData() {
   state.sites = (data.sites || []).map((s) => {
     const url = s.url || '';
     const urlName = url ? decodeURIComponent(url.replace(/\/$/, '').split('/').pop() || url) : '';
-    const name = s.name || urlName || s.site_id;
+    // Systemwebsites (Tenant Admin, My Site Host …) fehlen in getAllSites —
+    // dann ist der Report-Typ aussagekräftiger als die GUID
+    const name = s.name || urlName || (s.template ? `Systemwebsite: ${s.template}` : s.site_id);
     let daysInactive = null;
     if (s.last_activity) {
       const d = new Date(s.last_activity);
