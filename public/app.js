@@ -408,11 +408,16 @@ function activityCell(s) {
   return `${warn ? '<span class="chip">Inaktiv</span> ' : ''}<span title="${fmtDate(s.lastActivity)}">${label}</span>`;
 }
 
+function sitePath(url) {
+  // Nur den Pfad anzeigen (/sites/Alan); die volle URL bleibt im Tooltip
+  try { return new URL(url).pathname || '/'; } catch { return url; }
+}
+
 function renderSiteTable() {
   const list = filteredSites();
   $('#siteTable tbody').innerHTML = list.map((s) => `
     <tr>
-      <td>${s.name}<span class="upn" title="${s.url || s.siteId}">${s.url || s.siteId}</span></td>
+      <td>${s.name}<span class="upn" title="${s.url || s.siteId}">${s.url ? sitePath(s.url) : s.siteId}</span></td>
       <td class="lic">${s.templateLabel}</td>
       <td class="lic">${s.owner || '–'}</td>
       <td class="num"><strong>${fmtBytes(s.storageBytes)}</strong></td>
