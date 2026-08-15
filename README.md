@@ -20,6 +20,12 @@ SQLite-Datenbank historisiert und als Dashboard darstellt:
 - **Automatik:** eingebauter Wochen-Schedule (Standard: Montag 06:00) erfasst die
   Daten selbstständig, solange der Server läuft
 
+## Screenshots (Demo-Modus)
+
+![Benutzer-Ansicht](docs/screenshot-benutzer.png)
+
+![SharePoint-Ansicht](docs/screenshot-sharepoint.png)
+
 ## Voraussetzungen
 
 - Windows Server oder PC (getestet auch unter macOS/Linux für Entwicklung)
