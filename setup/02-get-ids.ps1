@@ -9,14 +9,17 @@
 #
 # Aufruf:  ./02-get-ids.ps1                          (Standardname)
 #          ./02-get-ids.ps1 -AppName 'Mein Name'     (eigener App-Name)
+#          ./02-get-ids.ps1 -Fix                     (fehlende Berechtigungen direkt zuweisen)
 
-param([string]$AppName = 'Speicher-Dashboard')
+param([string]$AppName = 'Speicher-Dashboard', [switch]$Fix)
 
 $ErrorActionPreference = 'Stop'
 $appName = $AppName
 
 Import-Module Microsoft.Graph.Applications
-Connect-MgGraph -Scopes 'Application.Read.All' -NoWelcome
+$scopes = @('Application.Read.All')
+if ($Fix) { $scopes += 'AppRoleAssignment.ReadWrite.All' }
+Connect-MgGraph -Scopes $scopes -NoWelcome
 
 $tenantId = (Get-MgContext).TenantId
 Write-Host "Tenant-ID: $tenantId" -ForegroundColor Green
@@ -67,4 +70,29 @@ foreach ($r in $required) {
 if (-not $sp) {
     Write-Host '  Kein Service Principal —' -ForegroundColor Red
     Write-Host '  im Portal einmal Admin-Consent erteilen.' -ForegroundColor Red
+}
+
+# Fehlende Zuweisungen direkt reparieren (-Fix). Direkte App-Rollen-Zuweisung ist
+# zuverlässiger als der Consent-Knopf im Portal, der bestehende Zuweisungen
+# zurücksetzen kann.
+$missing = @($required | Where-Object { $granted -notcontains $_ })
+if ($Fix -and $missing.Count -gt 0 -and $sp) {
+    $roleIds = @{
+        'Reports.Read.All'      = '230c1aed-a721-4c5d-9cb4-a90514e508ef'
+        'User.Read.All'         = 'df021288-bdef-4463-88db-98f22de89214'
+        'Organization.Read.All' = '498476ce-e0fe-48b0-b801-37ba7e2685c6'
+        'Sites.Read.All'        = '332a536c-c7ef-4017-ab91-336970924f0d'
+    }
+    Write-Host ''
+    Write-Host 'Weise fehlende Berechtigungen zu ...'
+    foreach ($m in $missing) {
+        New-MgServicePrincipalAppRoleAssignment -ServicePrincipalId $sp.Id `
+            -PrincipalId $sp.Id -ResourceId $graphSp.Id -AppRoleId $roleIds[$m] | Out-Null
+        Write-Host "  + $m" -ForegroundColor Green
+    }
+    Write-Host 'Fertig — neue Tokens enthalten die Rollen innert weniger Minuten.'
+}
+elseif ($missing.Count -gt 0 -and -not $Fix) {
+    Write-Host ''
+    Write-Host 'Tipp: ./02-get-ids.ps1 -Fix weist die fehlenden Berechtigungen direkt zu.' -ForegroundColor Yellow
 }
