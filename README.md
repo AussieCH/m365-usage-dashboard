@@ -120,4 +120,4 @@ werden (DPAPI ist benutzergebunden).
 Das Dashboard ist kostenlos und Open Source — von Nutzern für Nutzer.
 Wer das Projekt unterstützen möchte:
 
-[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-☕-ffdd00?style=for-the-badge)](https://buymeacoffee.com/timme)
+[<img src="docs/bmc-logo.png" alt="Buy Me a Coffee" width="160">](https://buymeacoffee.com/timme)
