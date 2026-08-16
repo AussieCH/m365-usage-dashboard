@@ -1,5 +1,7 @@
 # M365 Speicher-Dashboard
 
+🇩🇪 Deutsch (dieser Abschnitt) · 🇬🇧 [English version below](#m365-storage-dashboard-english)
+
 OnePage-Web-App (PowerShell/Pode), die per Microsoft Graph die Postfachgrössen und
 OneDrive-Belegung aller Benutzer eines Microsoft-365-Tenants ausliest, in einer
 SQLite-Datenbank historisiert und als Dashboard darstellt:
@@ -119,5 +121,129 @@ werden (DPAPI ist benutzergebunden).
 
 Das Dashboard ist kostenlos und Open Source — von Nutzern für Nutzer.
 Wer das Projekt unterstützen möchte:
+
+[<img src="docs/bmc-logo.png" alt="Buy Me a Coffee" width="160">](https://buymeacoffee.com/timme)
+
+---
+
+# M365 Storage Dashboard (English)
+
+Single-page web app (PowerShell/Pode) that reads mailbox sizes, OneDrive usage and
+SharePoint site storage for an entire Microsoft 365 tenant via Microsoft Graph,
+stores the history in a SQLite database and presents it as a dashboard:
+
+- **Tiles:** total tenant storage (mail + OneDrive + SharePoint) with the three
+  shares broken out, growth since the first snapshot, and user count broken down
+  by license type (incl. shared mailboxes)
+- **Chart:** storage over time — mailboxes, OneDrive and SharePoint as separate
+  lines, tooltip shows the total
+- **User list:** sortable (click a column header), full-text search, filters
+  (quota > 80 %, top 10, shared mailboxes), license column, quota bars with
+  warning thresholds (80 % / 95 %). Shared mailboxes are detected automatically
+  (mailbox present, account disabled, no license) and shown separately
+- **SharePoint tab:** all sites with real display names, storage, type
+  (team/communication), owner, file count, active files, page views and last
+  activity; sites inactive for more than 90 days are flagged as archiving
+  candidates; separate growth chart; search/sort/filter like the user list
+  (deep link: `#sharepoint`)
+- **Settings in the UI:** tenant ID, client ID, client secret (stored encrypted
+  via DPAPI on Windows), demo mode with generated sample data
+- **Automation:** built-in weekly schedule (default: Monday 06:00) collects a new
+  snapshot as long as the server is running
+
+Screenshots (demo mode) are shown [above](#screenshots-demo-modus).
+
+## Requirements
+
+- Windows server or PC (development also tested on macOS/Linux)
+- [PowerShell 7](https://aka.ms/powershell) (`winget install Microsoft.PowerShell`)
+- Modules: `Install-Module Pode, PSSQLite -Scope CurrentUser`
+  (on macOS/Linux the system `sqlite3` CLI is used instead of PSSQLite)
+
+## App registration in the customer tenant (one-time)
+
+The `setup/` folder contains a step-by-step guide (PDF, German) and PowerShell
+scripts that automate the whole process:
+
+- `01-register-app.ps1` — creates the app registration, service principal,
+  all Graph permissions incl. admin consent and a client secret, then prints
+  the three values the dashboard needs
+- `02-get-ids.ps1` — reads tenant ID / client ID of an existing registration,
+  lists secret expiry dates and verifies all permissions; `-Fix` assigns any
+  missing app roles directly (more reliable than the portal's consent button,
+  which can silently revoke existing grants)
+- `03-report-settings.ps1` — checks report pseudonymization and disables it on
+  request (`-Force` for non-interactive use)
+
+Manual portal setup works too: register an app (single tenant), add the Graph
+**application** permissions below, grant admin consent, create a client secret.
+
+| Permission | Purpose | Required? |
+|---|---|---|
+| `Reports.Read.All` | usage reports: mailbox, OneDrive and SharePoint storage | yes |
+| `User.Read.All` | per-user license assignments, shared-mailbox detection | recommended |
+| `Organization.Read.All` | license master data (SKU names) | recommended |
+| `Sites.Read.All` | SharePoint site display names and URLs (the usage report no longer includes site URLs in many tenants) | recommended |
+
+If the optional permissions are missing, storage collection still works — the
+dashboard shows a hint and leaves the affected columns empty.
+
+**Important — real names in reports:** Microsoft pseudonymizes usage reports in
+many tenants by default (hashes instead of names and site URLs). Disable this
+once in the [Microsoft 365 Admin Center](https://admin.microsoft.com) under
+*Settings → Org settings → Reports*, or run `03-report-settings.ps1`. The
+dashboard detects concealed reports and shows a warning.
+
+## Getting started
+
+```
+pwsh ./start.ps1
+```
+
+Dashboard: <http://localhost:8080> (port configurable in `settings.json`).
+On first start, open ⚙︎ **Settings**, enter the three values, click
+**Test connection**, save, then **Collect now**. `stop.ps1` stops the server.
+The **demo mode** checkbox generates 13 weeks of sample data — handy for a
+first look without any tenant access.
+
+To run permanently on Windows, register a scheduled task at system startup
+(see the German section above for a ready-made `Register-ScheduledTask` call).
+
+## Data storage
+
+- `data/usage.db` — SQLite; one row per user and snapshot date
+  (`snapshots`), one row per SharePoint site and snapshot date
+  (`site_snapshots`), plus a `meta` table
+- Collections are idempotent (`INSERT OR REPLACE`) and serialized — collecting
+  twice on the same day never creates duplicates
+- `settings.json` — configuration; the client secret is DPAPI-encrypted on
+  Windows and is never returned by the API
+- Graph usage reports lag by roughly 24–48 h; the snapshot date is the report's
+  "Report Refresh Date"
+
+## Architecture
+
+| File | Purpose |
+|---|---|
+| `server.ps1` | Pode server: static UI, REST API, weekly schedule |
+| `src/Graph.psm1` | token (client credentials), report fetching/merging, site names, demo data |
+| `src/Storage.psm1` | SQLite access (PSSQLite or sqlite3 CLI) |
+| `src/Settings.psm1` | settings load/save, secret encryption |
+| `src/App.psm1` | collection run + dashboard data aggregation |
+| `public/` | single-page frontend (vanilla JS + bundled Chart.js) |
+
+### API
+
+| Route | Purpose |
+|---|---|
+| `GET /api/data` | status + history + current user and site lists |
+| `GET/POST /api/settings` | read/write configuration (secret is write-only) |
+| `POST /api/test` | connection test (token acquisition) |
+| `POST /api/collect` | run a collection immediately |
+
+## Support
+
+The dashboard is free and open source — built by users, for users.
+If it saves you a few francs in backup costs:
 
 [<img src="docs/bmc-logo.png" alt="Buy Me a Coffee" width="160">](https://buymeacoffee.com/timme)
