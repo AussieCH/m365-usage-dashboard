@@ -71,15 +71,15 @@ Start-PodeServer -RootPath $root {
         try {
             $s = Get-AppSettings
             if ($s.demoMode) {
-                Write-PodeJsonResponse -Value @{ ok = $true; message = 'Demo-Modus aktiv — kein Tenant-Zugriff nötig.' }
+                Write-PodeJsonResponse -Value @{ ok = $true; message = (Get-Text 'demoActive') }
                 return
             }
             $secret = Unprotect-ClientSecret -Settings $s
             $null = Get-GraphToken -TenantId $s.tenantId -ClientId $s.clientId -ClientSecret $secret
-            Write-PodeJsonResponse -Value @{ ok = $true; message = 'Verbindung erfolgreich — Token erhalten.' }
+            Write-PodeJsonResponse -Value @{ ok = $true; message = (Get-Text 'connOk') }
         }
         catch {
-            Write-PodeJsonResponse -StatusCode 500 -Value @{ error = "Verbindung fehlgeschlagen: $_" }
+            Write-PodeJsonResponse -StatusCode 500 -Value @{ error = "$(Get-Text 'connFail')$_" }
         }
     }
 

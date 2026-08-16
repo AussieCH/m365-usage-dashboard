@@ -174,7 +174,8 @@ function Get-UsageSnapshot {
         }
     }
     catch {
-        $siteWarning = "Website-Namen nicht abrufbar (fehlt der App Sites.Read.All?): $($_.Exception.Message)"
+        # Sprachneutral speichern — der erklärende Satz kommt übersetzt aus dem Frontend
+        $siteWarning = [string]$_.Exception.Message
     }
 
     # Lizenzen und freigegebene Postfächer ergänzen (optional — braucht
@@ -206,7 +207,8 @@ function Get-UsageSnapshot {
         }
     }
     catch {
-        $licenseWarning = "Lizenzdaten nicht abrufbar (fehlen der App User.Read.All und Organization.Read.All?): $($_.Exception.Message)"
+        # Sprachneutral speichern — der erklärende Satz kommt übersetzt aus dem Frontend
+        $licenseWarning = [string]$_.Exception.Message
     }
 
     # Pseudonymisierte Reports erkennen: UPNs sind dann Hashes ohne '@'

@@ -4,6 +4,31 @@
 
 $script:SettingsPath = Join-Path (Split-Path $PSScriptRoot -Parent) 'settings.json'
 
+# Server-seitige Meldungen in der eingestellten Sprache
+$script:Texts = @{
+    de = @{
+        demoActive    = 'Demo-Modus aktiv — kein Tenant-Zugriff nötig.'
+        connOk        = 'Verbindung erfolgreich — Token erhalten.'
+        connFail      = 'Verbindung fehlgeschlagen: '
+        notConfigured = 'Tenant nicht konfiguriert. Bitte zuerst Tenant-ID, Client-ID und Client-Secret hinterlegen.'
+        emptyReport   = 'Report war leer — keine Benutzerdaten erhalten.'
+    }
+    en = @{
+        demoActive    = 'Demo mode active — no tenant access required.'
+        connOk        = 'Connection successful — token received.'
+        connFail      = 'Connection failed: '
+        notConfigured = 'Tenant not configured. Please enter tenant ID, client ID and client secret first.'
+        emptyReport   = 'Report was empty — no user data received.'
+    }
+}
+
+function Get-Text {
+    param([Parameter(Mandatory)][string]$Key)
+    $lang = (Get-AppSettings).language
+    if ($lang -ne 'en') { $lang = 'de' }
+    $script:Texts[$lang][$Key]
+}
+
 function Get-AppSettings {
     $defaults = [ordered]@{
         tenantId         = ''
@@ -62,4 +87,4 @@ function Unprotect-ClientSecret {
     }
 }
 
-Export-ModuleMember -Function Get-AppSettings, Save-AppSettings, Protect-ClientSecret, Unprotect-ClientSecret
+Export-ModuleMember -Function Get-AppSettings, Save-AppSettings, Protect-ClientSecret, Unprotect-ClientSecret, Get-Text

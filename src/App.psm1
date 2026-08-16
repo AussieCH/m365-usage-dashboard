@@ -37,12 +37,12 @@ function Invoke-UsageCollection {
 
     $secret = Unprotect-ClientSecret -Settings $settings
     if (-not ($settings.tenantId -and $settings.clientId -and $secret)) {
-        throw 'Tenant nicht konfiguriert. Bitte zuerst Tenant-ID, Client-ID und Client-Secret hinterlegen.'
+        throw (Get-Text 'notConfigured')
     }
 
     $snap = Get-UsageSnapshot -TenantId $settings.tenantId -ClientId $settings.clientId -ClientSecret $secret
     if ($snap.users.Count -eq 0) {
-        throw 'Report war leer — keine Benutzerdaten erhalten.'
+        throw (Get-Text 'emptyReport')
     }
 
     # Schlägt der Namens-Abruf fehl (z. B. 403 während Consent-Propagation), bereits

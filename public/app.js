@@ -14,7 +14,9 @@ const I18N = {
     tabUsers: 'Benutzer',
     bannerSetupHtml: '<strong>Noch nicht konfiguriert.</strong> Bitte in den <a href="#" id="linkSettings">Einstellungen</a> Tenant-ID, Client-ID und Client-Secret hinterlegen — oder den Demo-Modus aktivieren.',
     bannerLicense: 'Lizenzinformationen fehlen.',
+    bannerLicenseHint: 'Der App fehlen vermutlich die Berechtigungen User.Read.All und Organization.Read.All. Technische Details: ',
     bannerSites: 'Website-Namen fehlen.',
+    bannerSitesHint: 'Der App fehlt vermutlich die Berechtigung Sites.Read.All. Technische Details: ',
     bannerConcealedHtml: '<strong>Benutzernamen sind pseudonymisiert.</strong> Im Microsoft 365 Admin Center unter <em>Einstellungen → Organisationseinstellungen → Berichte</em> die Option «Verborgene Benutzer-, Gruppen- und Websitenamen in allen Berichten anzeigen» aktivieren, danach neu erfassen.',
     metaDemo: 'Demo-Modus',
     metaSnapshot: 'Snapshot:',
@@ -92,7 +94,9 @@ const I18N = {
     tabUsers: 'Users',
     bannerSetupHtml: '<strong>Not configured yet.</strong> Please enter tenant ID, client ID and client secret in the <a href="#" id="linkSettings">settings</a> — or enable demo mode.',
     bannerLicense: 'License information missing.',
+    bannerLicenseHint: 'The app is probably missing the User.Read.All and Organization.Read.All permissions. Technical details: ',
     bannerSites: 'Site names missing.',
+    bannerSitesHint: 'The app is probably missing the Sites.Read.All permission. Technical details: ',
     bannerConcealedHtml: '<strong>User names are pseudonymized.</strong> In the Microsoft 365 admin center under <em>Settings → Org settings → Reports</em>, enable the display of concealed user, group and site names in all reports, then collect again.',
     metaDemo: 'Demo mode',
     metaSnapshot: 'Snapshot:',
@@ -289,9 +293,9 @@ function render() {
   $('#bannerSetup').classList.toggle('hidden', !!st.configured);
   $('#bannerConcealed').classList.toggle('hidden', !st.concealed);
   $('#bannerLicense').classList.toggle('hidden', !st.licenseWarning);
-  $('#bannerLicenseText').textContent = st.licenseWarning || '';
+  $('#bannerLicenseText').textContent = st.licenseWarning ? t('bannerLicenseHint') + st.licenseWarning : '';
   $('#bannerSites').classList.toggle('hidden', !st.siteWarning);
-  $('#bannerSitesText').textContent = st.siteWarning || '';
+  $('#bannerSitesText').textContent = st.siteWarning ? t('bannerSitesHint') + st.siteWarning : '';
   $('#metaInfo').innerHTML = [
     st.demoMode ? `<strong>${t('metaDemo')}</strong>` : '',
     st.snapshotDate ? t('metaSnapshot') + ' ' + fmtDate(st.snapshotDate) : '',
