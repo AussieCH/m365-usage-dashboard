@@ -117,6 +117,12 @@ werden (DPAPI ist benutzergebunden).
 | `POST /api/test` | Verbindungstest (Token-Abruf) |
 | `POST /api/collect` | Erfassung sofort ausführen |
 
+## Lizenz
+
+[MIT](LICENSE) — frei nutzbar, auch kommerziell. Entwickelt mit Unterstützung
+von Claude (Anthropic) unter menschlicher Anleitung und Review; Details in der
+Commit-Historie.
+
 ## Unterstützung
 
 Das Dashboard ist kostenlos und Open Source — von Nutzern für Nutzer.
@@ -241,6 +247,12 @@ To run permanently on Windows, register a scheduled task at system startup
 | `GET/POST /api/settings` | read/write configuration (secret is write-only) |
 | `POST /api/test` | connection test (token acquisition) |
 | `POST /api/collect` | run a collection immediately |
+
+## License
+
+[MIT](LICENSE) — free to use, including commercially. Developed with the
+assistance of Claude (Anthropic) under human direction and review; see the
+commit history for details.
 
 ## Support
 
