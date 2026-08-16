@@ -9,33 +9,34 @@
 <body>
   <div class="wrap">
     <header>
-      <h1>M365 Speicher-Dashboard</h1>
+      <h1 data-i18n="title">M365 Speicher-Dashboard</h1>
       <div class="meta" id="metaInfo"></div>
-      <button id="btnCollect" title="Daten jetzt vom Tenant abrufen">Jetzt erfassen</button>
-      <button id="btnSettings" title="Einstellungen">⚙︎ Einstellungen</button>
+      <button id="btnCollect" data-i18n="btnCollect" data-i18n-title="btnCollectTitle"
+        title="Daten jetzt vom Tenant abrufen">Jetzt erfassen</button>
+      <button id="btnSettings" data-i18n="btnSettings" title="Einstellungen">⚙︎ Einstellungen</button>
     </header>
 
-    <div id="bannerSetup" class="banner hidden">
+    <div id="bannerSetup" class="banner hidden" data-i18n-html="bannerSetupHtml">
       <strong>Noch nicht konfiguriert.</strong>
       Bitte in den <a href="#" id="linkSettings">Einstellungen</a> Tenant-ID, Client-ID und Client-Secret hinterlegen
       — oder den Demo-Modus aktivieren.
     </div>
     <div id="bannerLicense" class="banner hidden">
-      <strong>Lizenzinformationen fehlen.</strong>
+      <strong data-i18n="bannerLicense">Lizenzinformationen fehlen.</strong>
       <span id="bannerLicenseText"></span>
     </div>
     <div id="bannerSites" class="banner hidden">
-      <strong>Website-Namen fehlen.</strong>
+      <strong data-i18n="bannerSites">Website-Namen fehlen.</strong>
       <span id="bannerSitesText"></span>
     </div>
-    <div id="bannerConcealed" class="banner critical hidden">
+    <div id="bannerConcealed" class="banner critical hidden" data-i18n-html="bannerConcealedHtml">
       <strong>Benutzernamen sind pseudonymisiert.</strong>
       Im Microsoft 365 Admin Center unter <em>Einstellungen → Organisationseinstellungen → Berichte</em> die Option
       «Verborgene Benutzer-, Gruppen- und Websitenamen in allen Berichten anzeigen» aktivieren, danach neu erfassen.
     </div>
 
     <nav class="tabs" role="tablist">
-      <button class="tab active" id="tabUsers" role="tab" aria-selected="true">Benutzer</button>
+      <button class="tab active" id="tabUsers" role="tab" aria-selected="true" data-i18n="tabUsers">Benutzer</button>
       <button class="tab" id="tabSites" role="tab" aria-selected="false">SharePoint</button>
     </nav>
 
@@ -43,34 +44,35 @@
     <section class="tiles" id="tiles"></section>
 
     <section class="card">
-      <h2>Belegung über Zeit</h2>
+      <h2 data-i18n="chartTitle">Belegung über Zeit</h2>
       <div class="chart-box"><canvas id="historyChart" role="img"
         aria-label="Liniendiagramm: Gesamtbelegung Mailbox und OneDrive über die Zeit"></canvas></div>
     </section>
 
     <section class="card">
-      <h2>Benutzer</h2>
+      <h2 data-i18n="usersCardTitle">Benutzer</h2>
       <div class="table-tools">
-        <input type="search" id="searchBox" placeholder="Suchen (Name oder Benutzername) …">
+        <input type="search" id="searchBox" data-i18n-ph="searchPlaceholder"
+          placeholder="Suchen (Name oder Benutzername) …">
         <select id="filterSelect">
-          <option value="all">Alle Benutzer</option>
-          <option value="mbx80">Mailbox &gt; 80 % der Quota</option>
-          <option value="od80">OneDrive &gt; 80 % der Quota</option>
-          <option value="top10">Top 10 Gesamtbelegung</option>
-          <option value="shared">Freigegebene Postfächer</option>
+          <option value="all" data-i18n="filterAll">Alle Benutzer</option>
+          <option value="mbx80" data-i18n="filterMbx80">Mailbox &gt; 80 % der Quota</option>
+          <option value="od80" data-i18n="filterOd80">OneDrive &gt; 80 % der Quota</option>
+          <option value="top10" data-i18n="filterTop10">Top 10 Gesamtbelegung</option>
+          <option value="shared" data-i18n="filterShared">Freigegebene Postfächer</option>
         </select>
       </div>
       <div class="table-scroll">
         <table id="userTable">
           <thead>
             <tr>
-              <th data-key="displayName">Benutzer<span class="arrow"></span></th>
-              <th data-key="licenses">Lizenz<span class="arrow"></span></th>
-              <th class="num" data-key="mailboxBytes">Mailbox<span class="arrow"></span></th>
-              <th data-key="mailboxPct">Mailbox-Quota<span class="arrow"></span></th>
-              <th class="num" data-key="onedriveBytes">OneDrive<span class="arrow"></span></th>
-              <th data-key="onedrivePct">OneDrive-Quota<span class="arrow"></span></th>
-              <th class="num" data-key="totalBytes">Gesamt<span class="arrow"></span></th>
+              <th data-key="displayName" data-i18n="thUser">Benutzer<span class="arrow"></span></th>
+              <th data-key="licenses" data-i18n="thLicense">Lizenz<span class="arrow"></span></th>
+              <th class="num" data-key="mailboxBytes" data-i18n="thMailbox">Mailbox<span class="arrow"></span></th>
+              <th data-key="mailboxPct" data-i18n="thMailboxQuota">Mailbox-Quota<span class="arrow"></span></th>
+              <th class="num" data-key="onedriveBytes" data-i18n="thOneDrive">OneDrive<span class="arrow"></span></th>
+              <th data-key="onedrivePct" data-i18n="thOneDriveQuota">OneDrive-Quota<span class="arrow"></span></th>
+              <th class="num" data-key="totalBytes" data-i18n="thTotal">Gesamt<span class="arrow"></span></th>
             </tr>
           </thead>
           <tbody></tbody>
@@ -84,35 +86,36 @@
     <section class="tiles" id="siteTiles"></section>
 
     <section class="card">
-      <h2>SharePoint-Belegung über Zeit</h2>
+      <h2 data-i18n="siteChartTitle">SharePoint-Belegung über Zeit</h2>
       <div class="chart-box"><canvas id="siteChart" role="img"
         aria-label="Liniendiagramm: SharePoint-Gesamtbelegung über die Zeit"></canvas></div>
     </section>
 
     <section class="card">
-      <h2>Websites</h2>
+      <h2 data-i18n="sitesCardTitle">Websites</h2>
       <div class="table-tools">
-        <input type="search" id="siteSearchBox" placeholder="Suchen (Name, URL oder Besitzer) …">
+        <input type="search" id="siteSearchBox" data-i18n-ph="siteSearchPlaceholder"
+          placeholder="Suchen (Name, URL oder Besitzer) …">
         <select id="siteFilterSelect">
-          <option value="all">Alle Websites</option>
-          <option value="inactive">Inaktiv &gt; 90 Tage</option>
-          <option value="top10">Top 10 Speicher</option>
-          <option value="team">Teamwebsites</option>
-          <option value="comm">Kommunikationswebsites</option>
+          <option value="all" data-i18n="sFilterAll">Alle Websites</option>
+          <option value="inactive" data-i18n="sFilterInactive">Inaktiv &gt; 90 Tage</option>
+          <option value="top10" data-i18n="sFilterTop10">Top 10 Speicher</option>
+          <option value="team" data-i18n="sFilterTeam">Teamwebsites</option>
+          <option value="comm" data-i18n="sFilterComm">Kommunikationswebsites</option>
         </select>
       </div>
       <div class="table-scroll">
         <table id="siteTable">
           <thead>
             <tr>
-              <th data-key="name">Website<span class="arrow"></span></th>
-              <th data-key="templateLabel">Typ<span class="arrow"></span></th>
-              <th data-key="owner">Besitzer<span class="arrow"></span></th>
-              <th class="num" data-key="storageBytes">Speicher<span class="arrow"></span></th>
-              <th class="num" data-key="files">Dateien<span class="arrow"></span></th>
-              <th class="num" data-key="activeFiles">Aktive Dateien<span class="arrow"></span></th>
-              <th class="num" data-key="pageViews">Seitenaufrufe<span class="arrow"></span></th>
-              <th class="num" data-key="daysInactive">Letzte Aktivität<span class="arrow"></span></th>
+              <th data-key="name" data-i18n="thSite">Website<span class="arrow"></span></th>
+              <th data-key="templateLabel" data-i18n="thType">Typ<span class="arrow"></span></th>
+              <th data-key="owner" data-i18n="thOwner">Besitzer<span class="arrow"></span></th>
+              <th class="num" data-key="storageBytes" data-i18n="thStorage">Speicher<span class="arrow"></span></th>
+              <th class="num" data-key="files" data-i18n="thFiles">Dateien<span class="arrow"></span></th>
+              <th class="num" data-key="activeFiles" data-i18n="thActiveFiles">Aktive Dateien<span class="arrow"></span></th>
+              <th class="num" data-key="pageViews" data-i18n="thPageViews">Seitenaufrufe<span class="arrow"></span></th>
+              <th class="num" data-key="daysInactive" data-i18n="thLastActivity">Letzte Aktivität<span class="arrow"></span></th>
             </tr>
           </thead>
           <tbody></tbody>
@@ -124,24 +127,29 @@
   </div>
 
   <dialog id="settingsDialog">
-    <h2>Einstellungen</h2>
+    <h2 data-i18n="dlgTitle">Einstellungen</h2>
     <form method="dialog" id="settingsForm">
-      <label for="inTenant">Tenant-ID (Verzeichnis-ID)</label>
+      <label for="inTenant" data-i18n="lblTenant">Tenant-ID (Verzeichnis-ID)</label>
       <input type="text" id="inTenant" placeholder="z. B. 3f2a…-…" autocomplete="off">
-      <label for="inClient">Client-ID (Anwendungs-ID)</label>
+      <label for="inClient" data-i18n="lblClient">Client-ID (Anwendungs-ID)</label>
       <input type="text" id="inClient" autocomplete="off">
-      <label for="inSecret">Client-Secret</label>
+      <label for="inSecret" data-i18n="lblSecret">Client-Secret</label>
       <input type="password" id="inSecret" autocomplete="off" placeholder="">
+      <label for="inLang" data-i18n="lblLanguage">Sprache / Language</label>
+      <select id="inLang">
+        <option value="de">Deutsch</option>
+        <option value="en">English</option>
+      </select>
       <div class="check">
         <input type="checkbox" id="inDemo">
-        <label for="inDemo" style="margin:0">Demo-Modus (Beispieldaten statt Tenant-Abruf)</label>
+        <label for="inDemo" style="margin:0" data-i18n="lblDemo">Demo-Modus (Beispieldaten statt Tenant-Abruf)</label>
       </div>
       <div class="msg" id="settingsMsg"></div>
       <div class="row">
-        <button type="button" id="btnTest">Verbindung testen</button>
+        <button type="button" id="btnTest" data-i18n="btnTest">Verbindung testen</button>
         <span class="spacer"></span>
-        <button type="button" id="btnClose">Schliessen</button>
-        <button type="submit" class="primary" id="btnSave">Speichern</button>
+        <button type="button" id="btnClose" data-i18n="btnClose">Schliessen</button>
+        <button type="submit" class="primary" id="btnSave" data-i18n="btnSave">Speichern</button>
       </div>
     </form>
   </dialog>

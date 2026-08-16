@@ -11,6 +11,7 @@ function Get-AppSettings {
         clientSecretEnc  = ''
         secretProtection = ''      # 'dpapi' | 'plain'
         demoMode         = $false
+        language         = 'de'    # 'de' | 'en'
         port             = 8080
         scheduleCron     = '0 6 * * 1'  # montags 06:00
     }

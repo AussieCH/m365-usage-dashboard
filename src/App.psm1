@@ -81,6 +81,7 @@ function Get-DashboardData {
             lastCollection = (Get-MetaValue -Key 'lastCollection')
             snapshotDate   = (Get-LatestSnapshotDate)
             concealed      = ((Get-MetaValue -Key 'concealed') -eq 'true')
+            language       = [string]$settings.language
             licenseWarning = [string](Get-MetaValue -Key 'licenseWarning')
             siteWarning    = [string](Get-MetaValue -Key 'siteWarning')
         }

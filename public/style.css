@@ -174,7 +174,7 @@ dialog {
 dialog::backdrop { background: rgba(0, 0, 0, 0.45); }
 dialog h2 { margin: 0 0 14px; font-size: 16px; }
 dialog label { display: block; font-size: 12.5px; color: var(--text-secondary); margin: 12px 0 4px; }
-dialog input[type="text"], dialog input[type="password"] {
+dialog input[type="text"], dialog input[type="password"], dialog select {
   width: 100%; font: inherit; padding: 8px 10px;
   background: var(--page); color: var(--text-primary);
   border: 1px solid var(--border); border-radius: 8px;

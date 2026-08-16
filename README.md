@@ -14,7 +14,7 @@ SQLite-Datenbank historisiert und als Dashboard darstellt:
   mit Warnschwellen (80 % / 95 %). Freigegebene Postfächer werden erkannt
   (Postfach vorhanden, Konto deaktiviert, keine Lizenz) und separat ausgewiesen
 - **Einstellungen im UI:** Tenant-ID, Client-ID, Client-Secret (verschlüsselt
-  gespeichert), Demo-Modus
+  gespeichert), Demo-Modus, Sprache (Deutsch/Englisch)
 - **SharePoint-Reiter:** alle Websites mit Speicherbelegung, Typ (Team/Kommunikation),
   Besitzer, Dateizahl, aktiven Dateien, Seitenaufrufen und letzter Aktivität;
   Inaktiv-Markierung (> 90 Tage) als Archivierungs-Kandidaten, eigener Zeitverlauf,
@@ -147,7 +147,8 @@ stores the history in a SQLite database and presents it as a dashboard:
   candidates; separate growth chart; search/sort/filter like the user list
   (deep link: `#sharepoint`)
 - **Settings in the UI:** tenant ID, client ID, client secret (stored encrypted
-  via DPAPI on Windows), demo mode with generated sample data
+  via DPAPI on Windows), demo mode with generated sample data, UI language
+  (German/English)
 - **Automation:** built-in weekly schedule (default: Monday 06:00) collects a new
   snapshot as long as the server is running
 

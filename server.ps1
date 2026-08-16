@@ -40,6 +40,7 @@ Start-PodeServer -RootPath $root {
             clientId     = $s.clientId
             secretSet    = [bool]$s.clientSecretEnc
             demoMode     = [bool]$s.demoMode
+            language     = [string]$s.language
             port         = $s.port
             scheduleCron = $s.scheduleCron
         }
@@ -52,6 +53,7 @@ Start-PodeServer -RootPath $root {
             if ($null -ne $in.tenantId) { $s.tenantId = [string]$in.tenantId }
             if ($null -ne $in.clientId) { $s.clientId = [string]$in.clientId }
             if ($null -ne $in.demoMode) { $s.demoMode = [bool]$in.demoMode }
+            if ($in.language -in 'de', 'en') { $s.language = [string]$in.language }
             if ($in.clientSecret) {
                 $prot = Protect-ClientSecret -PlainSecret ([string]$in.clientSecret)
                 $s.clientSecretEnc  = $prot.value
